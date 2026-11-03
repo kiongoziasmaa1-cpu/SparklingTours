@@ -1,0 +1,2 @@
+<div class="hp-field" aria-hidden="true"><label for="website-field">Leave this field empty</label><input id="website-field" name="website" tabindex="-1" autocomplete="off" value=""></div>
+@if(config('tourism.captcha.enabled'))<div class="cf-turnstile my-3" data-sitekey="{{config('tourism.captcha.site_key')}}" data-action="{{$action}}" data-theme="light"></div><script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>@endif

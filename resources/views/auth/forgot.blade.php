@@ -1,0 +1,2 @@
+@extends('layouts.public')
+@section('content')<section class="container"><div class="auth-shell form-panel"><div class="eyebrow">Staff access</div><h1 class="mb-4">Reset your password</h1><form method="post" action="{{route('password.email')}}">@csrf<x-input name="email" label="Account email" type="email" :required="true" /><button class="btn btn-primary w-100 mt-3" type="submit">Continue →</button></form></div></section>@endsection

@@ -1,0 +1,3 @@
+@extends('layouts.public')
+@section('title','Request received')
+@section('content')<section class="container section-pad"><div class="form-panel mx-auto text-center py-5" style="max-width:700px"><div class="eyebrow">Thank you for contacting Sparkling Tours</div><h1 class="fs-1">Your request was sent successfully.</h1><p class="mt-4">Our team will review your request and contact you to discuss the next steps.</p><div class="pill my-3">Your reference: <strong>{{$reference}}</strong></div><p class="small">Keep this reference for future communication. This request is not a confirmed reservation. Final details and payment instructions will follow after review.</p><a class="btn btn-primary mt-3" href="{{route('home')}}">Back to exploring →</a></div></section>@endsection

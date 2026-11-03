@@ -1,0 +1,572 @@
+MASTER BUILD PROMPT - TOURISM WEBSITE
+Laravel / PHP / MySQL / Blade / Bootstrap 5
+Revised specification version 2.0 | 15 October 2026
+
+Act as a senior Laravel engineer, tourism booking product designer and security-focused technical lead.
+
+Build the complete dynamic website described below. Produce a working database-backed application, not just a static mockup or a proposed plan. Use the complete revised specification in this prompt as the implementation contract. If the original attachment is also supplied, this version overrides its conflicting Accommodation, Transport, invoice and booking-security requirements. Preserve the original tourism scope elsewhere.
+
+Before coding, inspect the current repository and hosting constraints if available. Briefly state the architecture, exact compatible versions, assumptions, ERD and staged build order, then proceed with implementation. Do not stop after a plan. If this is a new project, create the required Laravel project and organized application files. If it is an existing project, adapt it without deleting unrelated work.
+
+Use Laravel/PHP, MySQL, Blade and Bootstrap 5. Do not substitute React, Next.js, Supabase, Firebase, WordPress or a different database. Use original or appropriately licensed images; sample data must be clearly marked as demo. Keep business identity and secrets configurable.
+
+CRITICAL BUSINESS RULES
+1. No Accommodation menu, public hotel catalogue or direct hotel-selection flow.
+2. Accommodation preferences appear optionally at the END of tour booking. A guide manually finds a suitable hotel, records actual availability/reservation details and prepares the invoice.
+3. Unknown accommodation cost is Pending quotation, never a zero-priced confirmed stay.
+4. Transport is a top-level, standalone route/type/fare booking flow. It must work without a tour or accommodation request.
+5. Admin can add routes, vehicle types and route-specific prices without changing code.
+6. Include private PDF invoices, deposit/full-payment requests and verified manual-payment recording now. No online payment gateway or live inventory integration is required initially.
+7. Validate CAPTCHA tokens and all prices on the backend. Persist bookings independently of email delivery and keep customer records private.
+
+COMPLETE REVISED SPECIFICATION
+
+1. PROJECT SCOPE AND TECHNOLOGY
+
+Build a complete, database-driven tourism website for Tanzania Mainland and Zanzibar. Retain the destination discovery, tours, activities, food, travel guides, editable homepage, galleries and custom trip planning described in the supplied SRS. Apply the revised accommodation and transport rules throughout the frontend, backend, calculations, database and tests.
+
+
+The changes that control this version
+
+- Accommodation is an optional preferences request at the end of a tour booking. Remove accommodation menus, public hotel listings and direct hotel selection. A guide sources a suitable hotel and prepares the final invoice.
+
+- Transport is a top-level menu and an independent route booking service. The administrator creates routes, vehicle types and their fares. A customer can book transport without booking a tour.
+
+- Accommodation has no automatic hotel price in the tour estimate. Display its status as Pending quotation until the guide supplies an actual price.
+
+- Invoicing, deposit or full-payment requests, private PDF delivery and manual payment verification are required in version 2.0. Direct online payment processing remains outside version 1 of the application.
+
+Layer | Required implementation
+
+- Backend: Laravel with PHP; target Laravel 13 with PHP 8.3+ after checking the actual host and dependencies. Pin compatible versions.
+
+- Database: MySQL, relational migrations, foreign keys, indexes and transactional writes.
+
+- Frontend: Blade, HTML5, CSS3, JavaScript and Bootstrap 5. Use Vite for asset builds. Do not mix Bootstrap and Tailwind.
+
+- Mail / PDF: Laravel Mail and Notifications, configured SMTP, persistent queued delivery and server-rendered invoice PDFs.
+
+- Authentication: Laravel authentication, role-based policies and administrator-created staff accounts.
+
+- Storage / deployment: Local development storage; suitable production media and private document storage; Git/GitHub; PHP/MySQL hosting with HTTPS.
+
+The source allowed either Tailwind or Bootstrap; this revision selects Bootstrap 5 to make the build prompt unambiguous. Laravel 13 / PHP 8.3+ is an implementation baseline checked against official documentation on 15 October 2026, not a version originally specified in the source. If the host cannot support it, report the conflict and propose a supported compatible version before implementation.
+
+Sparkling Tours and Safaris may be used as the editable working name from the source hero text. Company identity, logo, contacts, bank details, policies and real prices must be supplied or configured; do not invent business credentials or customer reviews.
+
+
+2. NAVIGATION, CONTENT AND PRESENTATION
+
+Provide an attractive, simple tourism interface that works on mobile, tablet and desktop. Use clear headings, readable pricing, strong destination photography, consistent spacing, accessible contrast and restrained motion. The public interface must describe customer decisions in plain travel language.
+
+Navigation | Items / behaviour
+
+- Top-level menu: Home | About Us | Zanzibar | Mainland | Transport | Contact Us
+
+- Zanzibar dropdown: Destinations | Tours | Activities | Food | Travel Guide
+
+- Mainland dropdown: Destinations | Tours | Activities | Food | Travel Guide
+
+- Accommodation: No main-menu, dropdown or footer item; no standalone public accommodation booking page.
+
+- Tour entry points: Plan Your Trip opens the custom planner. Book Available Tours opens published tour packages. Book Now preselects the chosen tour.
+
+- Transport entry point: Transport opens published routes and the independent transfer booking flow.
+
+
+Homepage order and regional content
+
+- Retain the source order: Hero; About Us; Why Travel With Us; Zanzibar Gallery; Tanzania Mainland Gallery; Footer. The hero includes Plan Your Trip and Book Available Tours buttons.
+
+- The administrator manages hero images, headings, descriptions, buttons, About content, benefits, featured destinations, gallery order, footer contacts and social links.
+
+- Destination pages contain descriptions, location, categories, images and applicable entry fees. Tour pages contain duration, itinerary, destinations, price basis, inclusions and exclusions. Activity pages include duration and participation restrictions.
+
+- Food pages contain meals or meal packages and pricing units. Travel Guide pages provide travel information; separately, the planner may offer priced guide services and language preferences.
+
+- Zanzibar and Mainland galleries support enlarged images and relevant destination links. Photographs of hotels may illustrate a destination but must not create a hotel catalogue or hotel-selection step.
+
+- Footer content includes quick links, regional pages, Transport, contact information, social links, copyright, Privacy Policy and Terms. Show real contact data only when configured.
+
+
+Usability and discoverability
+
+Dropdowns must work by keyboard, click and touch; hover may be an enhancement. Provide labelled fields, error summaries, visible focus, loading states and accessible date inputs. Preserve form values when validation fails. Optimize images, use pagination and cache published content with invalidation after edits. Add editable page titles, meta descriptions, readable URLs, sitemap and robots rules; keep admin pages and private documents out of indexing.
+
+Use English as the primary interface and provide English/Kiswahili interface translation files. Editorial translations must be supplied; fall back to English for missing content. Additional languages remain a future enhancement.
+
+
+3. TOURS, PLANNING AND BOOKING
+
+Support two tour entry paths: booking a published tour package, or submitting a custom trip built from configured tourism services. Both paths end in the same optional accommodation-preferences section and a final review before submission.
+
+
+Published tour packages
+
+Display tour name, region, image, duration, daily itinerary, destinations, inclusions, exclusions, price, currency and price basis. Book Now carries the tour ID and selections into the form. Validate travel dates, adult/child quantities and published status on the server. Clearly identify services already included in the package.
+
+
+Custom trip sequence
+
+1. Choose Zanzibar or Tanzania Mainland, travel dates and party size. One trip uses one region in the initial version.
+
+2. Select compatible destinations and optional food options, activities and guide services. Show units, quantities, durations and an updating estimated subtotal.
+
+3. Review the tour services and provide traveler contact details.
+
+4. At the end of the booking form, offer Do you need help booking accommodation? Default to No. Expand the preferences fields only when Yes is selected.
+
+5. Review the full request, including an accommodation summary where requested, complete anti-bot verification and submit once.
+
+Remove the source planner's direct hotel-selection step and selectable standalone transport step. Transport uses its own menu and booking flow. Transport already included within a tour remains part of that package's stated inclusions; do not create a separate route booking or add another transport charge automatically.
+
+Booking field | Requirement
+
+- Full name / email / phone: Required; allow international phone formats.
+
+- Country of residence: Required.
+
+- Start date / end date or duration: Required as applicable; end cannot precede start. Reject past service dates/times and validate tour constraints in the service timezone.
+
+- Adults / children / child ages: At least one adult; collect child ages only when pricing or accommodation needs them.
+
+- Region / selected services / estimate: Generated from verified server data, not trusted hidden prices.
+
+- Preferred contact / special requests: Email or supported phone/WhatsApp preference; bounded optional text.
+
+- Privacy acknowledgement / terms: Required acknowledgement or consent as appropriate; marketing permission is separate and optional.
+
+On success, save a unique booking reference and show Request received, subject to availability and final confirmation. Email the customer an acknowledgement and notify the administrator. No customer account is required. A booking reference by itself must not grant access to personal details.
+
+
+4. ACCOMMODATION PREFERENCE FIELDS
+
+Accommodation is a service arranged by a guide after a tour request. The customer describes the desired stay rather than selecting a named hotel or seeing live hotel availability. Keep this section optional and easy to complete.
+
+Field | Behaviour when accommodation is requested
+
+- Accommodation type: Hotel, resort, boutique hotel, guesthouse, apartment, villa or Not sure; options are administrator-managed.
+
+- Class / star preference: Budget, mid-range, luxury or Not sure; optional 3/4/5-star preference. Categories are configurable.
+
+- Preferred location: Configured region-compatible area plus an Other / describe location text box. Include Not sure.
+
+- Check-in / check-out: Required; check-out must be after check-in. Calculate nights from dates. Default sensibly from the tour but allow stays before or after it.
+
+- Guests: Adults and children; default from the tour and allow a different accommodation party. Collect child ages where relevant.
+
+- Rooms / room type: Positive room count; single, double, twin, family or flexible. Validate counts; the guide confirms actual occupancy suitability.
+
+- Budget and currency: Optional budget per room per night, explicitly labelled; TZS or USD. Budget is a preference, not a confirmed price.
+
+- Meal plan: Room only, breakfast, half board, full board, all inclusive or Not sure.
+
+- Useful preferences: Optional beachfront, pool, air conditioning, Wi-Fi, accessible room or similar configurable choices.
+
+- Additional details: A multiline text box for location details, requirements and other useful instructions; enforce a server-side length limit.
+
+
+Display and validation rules
+
+- Show a concise message: Tell us your preferences. Our guide will find suitable options and send you the price and payment details.
+
+- Only check-in/out, guest counts and room count must become required after Yes is selected. Type, class and location may use Not sure so the form remains simple.
+
+- If the customer switches to No, exclude previously entered accommodation values from the final booking and ignore them server-side.
+
+- Show the tour estimate separately from Accommodation: Pending quotation. Do not display a zero hotel cost or label the subtotal as a complete trip price.
+
+- A preferences request does not reserve a room. Store requested amenities as preferences for the guide to verify.
+
+- Do not collect passport scans, card numbers or unnecessary sensitive information in this initial form. A guide can request essential supplier details later through an appropriate private process.
+
+A standalone Transport booking must not reveal this accommodation form or depend on accommodation, tour or trip-plan records. If a tour already includes a hotel, clearly explain the existing inclusion and have the guide treat further accommodation preferences as an amendment rather than charge for the same stay twice.
+
+
+5. GUIDE SOURCING AND HOTEL RESERVATION
+
+The assigned guide or authorized administrator reviews accommodation preferences, uses hotels they know or other suitable suppliers, checks availability and records the hotel arrangement privately in the dashboard.
+
+1. Open the tour request and its accommodation preferences. Review dates, guest ages where supplied, room count, budget, preferred area and special requirements.
+
+2. Contact suitable hotels manually. Record one or more proposed options: hotel name, location, room type, meal plan, dates, nights, rooms, price, currency, inclusions, exclusions and cancellation terms.
+
+3. Record the time availability was checked, supplier contact, any deposit deadline, and the actual reservation or provisional-hold reference if the hotel provides one. Internal supplier notes stay private.
+
+4. Select the agreed option for the invoice. The guide may record a provisional or confirmed reservation before invoicing if the supplier permits it; never claim a confirmed room without actual supplier confirmation.
+
+5. Prepare and preview the invoice with the tour and agreed accommodation charges. Request a deposit or full payment and send the customer a private invoice link and notification.
+
+6. After payment is verified, complete any outstanding supplier booking and update the hotel and tour confirmation statuses separately. Send the genuine reservation details and final arrangements to the customer.
+
+
+Keep availability, finance and customer decisions separate
+
+Record | Suggested states / control
+
+- Tour booking: Submitted, under review, awaiting customer, awaiting payment, confirmed, completed, declined, cancelled.
+
+- Accommodation arrangement: Requested, sourcing, proposed, held, confirmed, unavailable, declined. Store hold expiry when applicable.
+
+- Invoice lifecycle: Draft, issued, void; retain issued versions. Settlement is tracked separately as unpaid, partially paid or paid.
+
+- Confirmation rule: Only authorized staff confirm after checking availability, supplier agreement and the applicable payment terms. Deposit payment alone does not prove a room exists.
+
+If no suitable hotel is available, record the outcome and ask the customer whether they accept another option. Do not silently substitute a different class, location, price or cancellation policy. Keep the original request, proposal changes and customer approval or communication history.
+
+Use an internal supplier record only where useful for repeat bookings; a full hotel inventory, room-stock engine, supplier portal or public hotel marketplace is not required. Quotes or proformas may optionally precede the invoice, but downloadable invoices and partial/full-payment tracking are required now.
+
+
+6. TRANSPORT CATALOGUE MANAGED BY ADMIN
+
+Implement a simple standalone transport module within the same website. Customers choose from routes the administrator has explicitly published. Avoid a map-based dispatch application, arbitrary-distance fare engine or mandatory tour itinerary.
+
+Route record | Administrator-managed fields
+
+- Identity and coverage: Route name, slug, region, origin, destination, endpoint areas, short description and optional image.
+
+- Journey details: Approximate duration, pickup/drop-off instructions, inclusions, exclusions and relevant luggage or accessibility notes.
+
+- Publication: Draft/published status, active dates or simple booking cutoff where needed, display order.
+
+- Vehicle types available: Assign only the types actually offered for this route; an active global type alone must not make it bookable on every route.
+
+- Fares per route and type: Price, currency, pricing basis, passenger capacity, luggage allowance, any minimum/maximum party rules and explicitly listed extra charges.
+
+- Optional return service: Off by default. Show it only if a return fare or an explicit return pricing rule is configured; otherwise create a separate reverse route.
+
+
+Transport and vehicle types
+
+Administrators can create, edit, activate and deactivate types without a code change. Examples: private car, minivan, safari 4x4, minibus, bus, speedboat and ferry. Each type has a display name, optional mode/category, description, optional image, capacity and luggage information. Examples are demo options, not claims that the operator offers them.
+
+Use a route-to-vehicle fare record so the same route can have different fares for a private car, minivan or boat. Allow route-specific capacity and fare overrides. Keep a type disabled until required details are configured. A route must have at least one valid active fare before publication.
+
+
+Simple public route cards
+
+- Show origin to destination, estimated duration, supported vehicle types, key inclusions and a Book Transport button.
+
+- Where a card shows From, calculate it from valid active offers and label the currency and fare basis. Show the actual chosen fare after type selection.
+
+- Allow simple region and origin/destination filters. Only published routes and their active offers appear.
+
+- Opposite directions may have different prices and service conditions; do not assume a published route automatically works in reverse.
+
+- Deactivating or editing a route/type affects future requests. Preserve the details and prices already snapshotted into existing requests and issued invoices.
+
+
+7. INDEPENDENT TRANSPORT BOOKING FLOW
+
+A visitor must be able to complete this flow from the Transport menu without selecting a tour, destination package or accommodation. Keep each step short and show the exact chosen service before submission.
+
+1. Choose a published route, then a vehicle/transport type offered on that route.
+
+2. Enter pickup/service date and local time, adults/children or total passengers, luggage and the pickup/drop-off details required by that route.
+
+3. Collect the lead customer's name, email, international phone number and country. Allow optional arrival flight/ferry number, accessible-travel needs and bounded special-request text.
+
+4. Show route, direction, transport type, party size, vehicle or seat quantity, service time, fare basis, currency, included/extra charges and estimated total. If a configured return service is selected, collect its date/time and show its explicit charge.
+
+5. Complete privacy/terms acknowledgement and anti-bot verification; submit a transport request with its own reference and confirmation page.
+
+
+Capacity and pricing rules
+
+- For a private vehicle fare, amount = configured route/type fare x vehicle count. If multiple vehicles are supported, vehicle count = ceiling(passengers / configured capacity); clearly show that quantity and price. Otherwise reject an oversized party or offer a larger supported type.
+
+- For a per-person/per-seat fare, amount = configured route/type fare x billable passengers. Child discounts or infant rules apply only when configured and must be visible. Do not infer them.
+
+- Validate capacities, passenger counts, luggage restrictions, direction, active offer, cutoff and service time on the backend. Never accept the client-supplied amount or a type not assigned to the route.
+
+- Fixed route fares do not need GPS, geocoding, distance calculations, dynamic driver assignment or live fleet tracking.
+
+- No live seat or vehicle inventory is promised. The operator reviews availability and sends an invoice/payment request before final confirmation under the applicable terms.
+
+Demo only | Expected result
+
+- Car: capacity 4, fare TZS 80,000 per vehicle: 5 passengers require 2 cars and TZS 160,000 only if multiple vehicles are enabled; otherwise reject that choice.
+
+- Minivan: capacity 8, fare TZS 120,000 per vehicle: 5 passengers require 1 minivan and TZS 120,000.
+
+- Boat/ferry: fare TZS 30,000 per person: 3 billable passengers produce TZS 90,000, subject to configured capacity and review.
+
+Use separate transport screens, request validation and service logic; shared customer-contact fields, invoice generation, security, mail delivery and reporting utilities are acceptable. Database tour/accommodation relationships must remain optional or absent for a transport booking. Do not merge a transport request into a tour cart automatically.
+
+
+8. ESTIMATES, CURRENCIES AND MONEY RULES
+
+Calculate every payable or estimated amount on the server from current configured data. JavaScript can provide an immediate preview, but it must not decide the amount saved or invoiced.
+
+
+Tour estimates
+
+Custom tour estimate = destination charges + selected food + selected activities + selected guide services + disclosed applicable extras/taxes. Package estimates use the package's configured basis and eligible extras. Included package transport or accommodation is represented within that package's price, not added a second time. Additional guide-sourced accommodation remains Pending quotation and excluded from the calculated estimate until priced.
+
+- Support relevant units such as per person, per group, per day and per meal, with explicit quantities and durations. Make it clear whether a displayed amount is per person or the whole group.
+
+- A missing required price means quotation required, not zero. A genuinely free service must be explicitly configured as free.
+
+- Prevent duplicate charging for included meals, activities, guides and transfers. Reject incompatible region/service combinations.
+
+- If a price changes before submission, present the revised breakdown and require review instead of silently accepting a different amount.
+
+- Store names, units, quantities, inclusions, exclusions, currency, applied rate and amount snapshots on submission and on invoicing; subsequent catalogue edits must not rewrite history.
+
+
+TZS and USD
+
+Preserve the source requirement to display Tanzanian shillings and US dollars. Use TZS and USD codes with unambiguous symbols. Each estimate, invoice and payment ledger must have one settlement currency. If a second display currency is calculated, use an administrator-maintained exchange rate with its effective date; snapshot the rate and mark the secondary amount as indicative. Never add raw TZS and USD values. Do not invent exchange rates or silently convert a payment.
+
+
+Invoice and deposit calculations
+
+Value | Definition
+
+- Line amount: Validated quantity x unit price, applying the defined pricing unit.
+
+- Grand total: Subtotal - configured discount + applicable configured tax. Default to no tax until the business supplies a valid setup; no invented tax rate.
+
+- Deposit required: A percentage of grand total or fixed amount, clamped between zero and grand total; alternatively request the full total.
+
+- Net paid / balance: Net paid = verified posted payments - recorded refunds; balance = grand total - net paid. Handle overpayments explicitly.
+
+- Due now: For deposit mode: max(0, min(balance, deposit required - net paid)); for full mode: remaining balance. Show total, deposit requirement, already paid and balance separately.
+
+Use MySQL DECIMAL monetary fields and decimal-safe PHP arithmetic or integer minor units; do not use floating-point arithmetic for money. Apply consistent documented rounding. Reject invalid negative amounts, percentages over 100 and unconfigured fees. Use actual date differences for accommodation nights.
+
+
+9. INVOICES AND MANUAL PAYMENT RECORDING
+
+Provide an administrator/authorized-guide invoice editor and a branded, readable A4 PDF. Invoices may cover a tour and its arranged accommodation, or a standalone transport booking. A customer receives a clear request to pay a deposit or the full amount.
+
+Invoice content | Required fields
+
+- Identity: Unique invoice number, booking reference, issue date, due date, company name/logo/contact details and customer billing details.
+
+- Services: Description, service dates, quantity/unit, unit price and amount. Agreed hotel name, rooms/nights/board and route/type details where relevant.
+
+- Totals: Currency, subtotal, disclosed discounts/taxes, grand total, deposit or full-payment request, amount paid, due now and outstanding balance.
+
+- Payment instructions: Configured bank/mobile/manual payment details, payment reference, deadlines, cancellation/refund terms and applicable confirmation conditions.
+
+- Delivery: PDF preview/download; explicit send action; email notification containing a private expiring link. Optional manual WhatsApp sharing of the protected link.
+
+
+Document integrity
+
+Generate invoice numbers using a transaction-safe sequence and database uniqueness, for example INV-2026-000001. Preview drafts before sending. Freeze the contents of issued invoices; keep a revision or void/reissue history with links to superseded documents. Preserve existing payment links and audit history. Do not delete issued or paid records through normal CRUD actions. A quotation/proforma is optional and must be labelled separately from an invoice or a receipt.
+
+
+Deposit and full payments without a gateway
+
+1. The customer follows the invoice's configured offline/manual payment instructions. No card or wallet checkout is required in the initial implementation.
+
+2. Authorized staff verify money received and record amount, currency, date, method, transaction reference and recorder. A screenshot or customer assertion alone must not mark the payment verified.
+
+3. Record partial payments, final payments and any refunds as separate ledger entries. Prevent duplicate recording of the same transaction where identifiable and use transactional updates.
+
+4. Recalculate net paid, due now and balance; show unpaid, partially paid or paid settlement status. Provide a payment acknowledgement/receipt after verified payment.
+
+5. Update booking and supplier confirmation only through the applicable authorized workflow, independently of invoice settlement.
+
+Keep invoice PDFs and any optional payment evidence in private storage. Customer access requires an unguessable, expiring, revocable token or appropriately protected temporary signed link; knowing an invoice number must never be enough. Store only token hashes and scope access to the intended document. Superseded or void links must cease granting access to the active document. Do not put personal details in URLs, public storage paths, sitemaps or analytics.
+
+
+10. ADMINISTRATION, RECORDS AND NOTIFICATIONS
+
+Provide a usable dashboard with role checks on every sensitive action. Administrator and Guide/Staff are separate roles. Account creation is managed by the administrator; no public staff registration.
+
+- Dashboard: counts for destinations, tours, activities, food and guide services; published routes/types; tour and transport requests; accommodation requests needing sourcing; unpaid/partly paid invoices and upcoming travel.
+
+- Content modules: regions, destinations/images, tours/itineraries/inclusions, food, activities, guide services, galleries, About/travel-information pages and homepage/footer content.
+
+- Accommodation workbench: configurable types/classes/locations/preferences, assigned requests, hotel proposals, selected option, supplier reservation references and private notes.
+
+- Transport modules: routes, transport/vehicle types, route-specific fares, publication/capacity settings and transport request review.
+
+- Bookings: filter by kind, region, date, status, assigned staff and reference; inspect service snapshots; record communications and controlled status changes.
+
+- Finance: invoice drafts/issued history, PDFs, payment instructions, requested deposits, verified payments, refunds, balance and retryable delivery status.
+
+- Settings: editable brand/contact details, administrative notification address, TZS/USD configuration and manual exchange rates. Keep technical secrets in environment configuration.
+
+- Admin manages all permitted records. Guides see only assigned requests and the functions explicitly granted to them; invoice issuing and payment verification require explicit permissions. Log actor, timestamp and changed fields for sensitive changes.
+
+
+Reliable request persistence and messages
+
+Validate and save the booking, items, preferences and a notification/outbox record atomically. Dispatch emails after database commit through a persistent queue. A delivery failure must not erase the booking or report a database save as failed. Record pending/failed deliveries, retries and successful delivery where observable. Use retry/backoff and a recovery path for pending outbox entries if the queue is temporarily unavailable.
+
+Administrator emails include the request reference, booking kind, contact details, travel information, selected services, price breakdown and accommodation preferences or transport route/type as applicable. Customer acknowledgements clearly say the request is awaiting review. Final arrangement and invoice notifications must reflect the actual latest status, not pretend email delivery or hotel availability succeeded.
+
+
+Privacy and retention
+
+Show a concise privacy notice covering booking processing and sharing necessary details with suppliers. Keep internal notes private. Limit staff access, avoid logging full request payloads and remove unnecessary personal data according to an administrator-defined retention policy that respects required business record retention. Back up the database and private documents regularly and document a restore procedure.
+
+
+11. BOOKING SECURITY AND ABUSE PREVENTION
+
+Security is a working backend requirement. A CAPTCHA widget alone does not make a booking endpoint secure. Protect tour submissions, transport submissions, contact forms and sensitive staff/customer-document actions.
+
+
+Cloudflare Turnstile as the default CAPTCHA alternative
+
+- Use a Managed Turnstile widget on the final submit stage of public booking/contact forms. A provider abstraction may permit reCAPTCHA later; do not require customers to solve two providers.
+
+- Store the site key as public configuration and the secret key in environment variables. Enforce the production hostname allowlist and a distinct expected action for tour_booking, transport_booking and contact.
+
+- Verify the token from Laravel through the provider's Siteverify endpoint. Require success and check the returned hostname and action against the expected values. Client-side callbacks alone must never authorize a booking.
+
+- Turnstile tokens expire after five minutes and are single-use. Generate or refresh verification near submission, reset after expiry/rejection and preserve the customer's form values.
+
+- If verification times out or fails, explain the retry and reject the new submission; do not silently bypass it. Use official test keys or a mocked verifier only in isolated local/test environments. Production startup must detect missing keys or an enabled bypass.
+
+
+Defence in depth
+
+- Use Laravel CSRF protection for state-changing forms, FormRequest validation, Eloquent/parameter binding and explicit allowed fields. Validate IDs, region compatibility, quantities, currency, route/type assignments and all current prices server-side.
+
+- Apply configurable Laravel rate limits to bookings, contact, login, password reset, estimate endpoints and document-access attempts. Combine appropriate IP/session or hashed-identity limits; return a useful retry message. Trust proxy headers only from configured proxies.
+
+- Use an accessible honeypot as an additional signal, not a replacement for verification. Limit text lengths and request sizes. Scope idempotency keys to the guest session and payload, use database uniqueness and return the existing request on a genuine retry instead of creating duplicate bookings or emails.
+
+- Require HTTPS, secure HttpOnly session cookies, suitable SameSite settings, session rotation on login, password hashing and throttled authentication. Send staff directly to the dashboard after successful password login and authorize every record action through policies.
+
+- Escape untrusted output in Blade; sanitize any permitted rich text. Apply security headers and a CSP compatible with Turnstile. Keep debug output and secrets out of production.
+
+- Check uploaded images by actual type, extension, size and dimensions; allow only approved formats, use generated names and block executable content. Store financial evidence privately. Serve private downloads through authorization/token checks; prevent path traversal and insecure direct object access.
+
+CAPTCHA, CSRF, rate limiting, authorization and price validation solve different problems and must coexist. Test forged, expired, replayed and wrong-action tokens as well as price manipulation and unauthorized invoice access.
+
+
+12. DATA MODEL, CODE STRUCTURE AND DEPLOYMENT
+
+Design the ERD and migration constraints before building screens. Use practical Laravel models, controllers, services, policies, FormRequests, jobs and reusable Blade components. Do not replace the requested stack with a JavaScript SPA or a different database.
+
+Data group | Suggested tables / relationships
+
+- Staff and content: users, roles/permissions as needed; regions, destinations, destination_images; tours, tour_itineraries, tour_destination and package inclusion records.
+
+- Selectable services: activities, food_options, travel_guides and suitable region/destination relationships.
+
+- Requests: bookings with kind tour or transport and tour source package/custom; booking_items with immutable descriptive/price snapshots; optional trip_plans/items for the planner.
+
+- Tour / accommodation: tour_booking_details; accommodation_requests belongs to a tour booking; accommodation_proposals and a selected proposal reference; preference lookup records. No public hotel inventory is required.
+
+- Independent transport: transport_routes, vehicle_types, transport_route_fares (route x type), transport_booking_details belongs to a transport booking and selected fare; snapshot route, type, capacity, times and prices.
+
+- Finance and delivery: invoices, invoice_items, invoice revisions or immutable snapshots, payments/refunds, document_sequences, private access tokens, notification_outbox/delivery attempts and audit_logs.
+
+- CMS / operations: galleries/media, pages, site_settings, inquiries; sessions, cache, jobs and failed_jobs as needed.
+
+Use foreign keys, unique booking/invoice references, scoped idempotency keys and indexed booking kind/status/dates. Preserve historical snapshots when source content is edited or deactivated. Enforce that accommodation belongs only to tour requests and that transport requests do not require tour IDs. Store instants in UTC, interpret service dates/times using Africa/Dar_es_Salaam, and keep accommodation dates as local calendar dates.
+
+
+Deployment and operation
+
+- Use service classes such as TourPricingService, TransportPricingService, BookingSubmissionService, AccommodationArrangementService, InvoiceService and CaptchaVerifier. Keep controllers thin and policy checks explicit.
+
+- Choose a maintained server-side PDF dependency compatible with the chosen Laravel/PHP versions. Use controlled local assets and disable unneeded remote resource fetching in invoice rendering.
+
+- Provide migrations, demo seeders, environment examples without secrets and lockfiles. Use a persistent database queue initially; Redis is optional, not required.
+
+- Document PHP extensions, Composer, MySQL, asset build steps, storage permissions, public/ document root, HTTPS, cron/scheduler and queue processing. Node is needed for building assets; no persistent Node server is required.
+
+- On a VPS use a supervised worker; on a compatible shared host document a cron-based queue worker with overlap prevention. Set APP_DEBUG=false, cache production config appropriately, protect .env and test backup restoration.
+
+
+13. ACCEPTANCE CRITERIA AND IMPLEMENTATION DELIVERY
+
+The implementation is complete only when the principal customer and administrator workflows work against the database. Use automated tests for pricing, persistence, authorization and security, plus browser checks for the full mobile/desktop journeys.
+
+1. Navigation has Transport and exactly five categories in each regional dropdown. No public accommodation menu, hotel list or direct hotel booking is exposed.
+
+2. Published tours and the custom planner support their configured units, dates and region rules. Included services are not charged twice; missing prices show quotation required.
+
+3. A customer completes a tour without accommodation. Another requests accommodation at the end, including a stay before or after the tour; conditional validation works and the hotel price remains pending.
+
+4. A guide reviews preferences, records a real proposed hotel and reservation/hold status, selects the agreed offer and prepares an invoice. Internal notes remain private.
+
+5. An admin creates a new vehicle type and route fare; it appears without a code change. A customer books that route/type without any tour or accommodation record.
+
+6. Incompatible types, unpublished routes, invalid times and capacity overflow are rejected. Per-person and per-vehicle calculations, multiple-vehicle quantities and configured return charges are correct.
+
+7. Manipulated client prices, cross-region IDs and changed catalogue prices are handled safely. Currency conversion is explicit; snapshots and issued invoices survive catalogue changes.
+
+8. An issued invoice supports deposit and full-payment requests. Verified partial/final payments produce correct due-now/balance values; duplicate transactions and unauthorized financial updates are rejected.
+
+9. Failed or missing CAPTCHA, expired/replayed tokens, wrong hostname/action, CSRF failure and excessive submissions are rejected. Genuine retries cannot duplicate bookings, payments or notification records.
+
+10. Database failure never yields a success acknowledgement. Email/queue failure leaves the saved booking visible with a retryable delivery record.
+
+11. Unauthorized staff cannot access another guide's restricted records. Guessing a reference or altering an expired/revoked invoice link does not reveal customer information.
+
+12. Mobile navigation, field errors, back/next preservation, optional accommodation, route booking, invoice rendering and admin edit screens work. Backups can be restored.
+
+
+Build order and handover
+
+Deliver in working stages: architecture/ERD and migrations; authentication/CMS/catalogues; tour booking and optional preferences; independent transport; guide sourcing/invoices/manual payments; hardening/tests/deployment. Provide complete source files, demo seed data, installation instructions, an admin workflow guide and the actual checks run. Identify external credentials and editorial content still required. Do not claim a deployed site, working email or production security verification unless those checks were actually completed.
+
+Future scope: direct payment gateways, live hotel/seat inventory, supplier/operator APIs, customer accounts/saved itineraries, automated WhatsApp delivery, maps/route planning, advanced analytics and further languages. Manual invoices and PDF delivery are current scope and must not be deferred as future enhancements.
+
+
+14. CHANGE TRACEABILITY AND REFERENCE NOTES
+
+This version replaces conflicting requirements in the supplied October 2026 SRS version 1.0. It preserves the original business coverage and Laravel/PHP/MySQL foundation while implementing the requested changes. The implementation prompt contains this complete revised specification so it can be used independently.
+
+Source area | Version 2.0 replacement
+
+- Sections 1 and 2: Update scope; add Transport; remove Accommodation from both six-item regional dropdowns, leaving five categories.
+
+- Sections 3 and 4.5: Retain homepage order; replace public accommodation selection with optional preferences at the end of tour booking.
+
+- Section 4.8: Move standalone transportation out of the custom planner into independent route/type booking. Retain package inclusions without duplicate charges.
+
+- Sections 4.10-4.12 and 5: Revise summaries, estimate formula, conditional fields and emails; label unpriced accommodation as Pending quotation.
+
+- Section 6: Add accommodation sourcing/proposals, transport routes and route-type fares, invoices, deposit/full-payment tracking, permissions and delivery retries.
+
+- Sections 7 and 8: Revise relational model and separate booking kinds. Retain Laravel/PHP/MySQL/Blade and select Bootstrap from the original frontend alternatives.
+
+- Sections 9 and 10: Make CAPTCHA backend verification, private invoice access, idempotency, pricing security and acceptance criteria explicit.
+
+- Sections 11 and 12: Keep online gateways and live availability out of initial scope. Bring manual invoice generation and downloadable invoice PDFs into current scope.
+
+
+Primary technical references checked on 15 October 2026
+
+These references support technology/security details. The transport and accommodation workflows are project design decisions derived from the user's requested revision, not claims made by these sources.
+
+- Laravel release notes - version/PHP compatibility
+  https://laravel.com/framework/docs/13.x/releases
+
+- Cloudflare Turnstile - server-side validation, expiry, single use, hostname/action checks
+  https://developers.cloudflare.com/turnstile/get-started/server-side-validation/
+
+- Laravel temporary signed URLs
+  https://laravel.com/framework/docs/13.x/urls#signed-urls
+
+- Laravel queues and database transactions
+  https://laravel.com/framework/docs/13.x/queues#jobs-and-database-transactions
+
+- Laravel rate limiting
+  https://laravel.com/framework/docs/13.x/rate-limiting
+
+- OWASP File Upload Cheat Sheet
+  https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html
+
+IMPLEMENTATION OUTPUT CONTRACT
+- Provide the project tree, complete implementation files, migrations, seeders, policies, FormRequests, services, jobs, Blade views, styles and meaningful tests.
+- Implement all public and admin routes. Buttons must perform their stated actions; do not leave fake success responses or hardcoded financial totals.
+- Provide .env.example without real secrets. Document DB, mail, queue, Turnstile site/secret keys, allowed hostnames, app URL, storage and timezone configuration.
+- Include a production-safe first-admin setup method with no permanent default password.
+- Include demo data for Zanzibar/Mainland tours, a custom trip, an optional accommodation request, independently bookable transport routes and at least two vehicle types with different route fares.
+- Test money calculations, hotel-pending estimates, capacity, independent transport, guest idempotency, forged/expired/replayed CAPTCHA responses, authorization, invoice links, payment balances and persistence during email failures. Use a fake verifier and mail/queue test facilities in tests; never bypass production verification.
+- Run relevant tests and frontend build where the environment permits. Report actual results and any checks you could not run.
+- Provide practical local and compatible PHP/MySQL hosting instructions, queue/scheduler setup, backup/restore instructions and a short administrator guide.
+- End with a checklist of implemented acceptance criteria and any real remaining dependencies. Do not claim the site was deployed or production-ready unless it was actually deployed and verified.
+
+Start with the architecture and database migrations, then continue through the working implementation in the build order above. Carry the requirements consistently through the frontend, backend, database, calculations, notifications and tests.

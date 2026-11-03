@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
+  <title id="title">Sparkling Tours</title>
+  <circle cx="48" cy="48" r="46" fill="#153d34"/>
+  <path d="M25 59c7-6 13-6 20 0s13 6 20 0 10-5 15-2" fill="none" stroke="#f4d6ab" stroke-linecap="round" stroke-width="4"/>
+  <path d="M25 69c7-6 13-6 20 0s13 6 20 0 10-5 15-2" fill="none" stroke="#f4d6ab" stroke-linecap="round" stroke-width="4"/>
+  <path d="M48 18l3.5 10.5L62 32l-10.5 3.5L48 46l-3.5-10.5L34 32l10.5-3.5L48 18z" fill="#f4d6ab"/>
+</svg>

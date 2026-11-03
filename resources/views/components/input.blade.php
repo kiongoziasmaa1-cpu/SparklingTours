@@ -1,0 +1,3 @@
+@props(['name','label','type'=>'text','value'=>'','required'=>false,'hint'=>''])
+@php($key=str_replace(['[',']'],['.',''],$name))
+<div class="mb-3"><label class="form-label" for="field-{{str_replace('.','-',$key)}}">{{$label}}@if($required)<span aria-hidden="true"> *</span>@endif</label><input id="field-{{str_replace('.','-',$key)}}" name="{{$name}}" type="{{$type}}" value="{{old($key,$value)}}" @required($required) {{$attributes->class(['form-control','is-invalid'=>$errors->has($key)])}}>@if($hint)<div class="form-text">{{$hint}}</div>@endif @error($key)<div class="invalid-feedback">{{$message}}</div>@enderror</div>

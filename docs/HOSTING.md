@@ -2,17 +2,61 @@
 
 ## Supported target
 
-Use an HTTPS PHP/MySQL host with PHP 8.4.1+ (a current patched 8.4/8.5 release), required PHP extensions, a MySQL 8.0 database, writable application storage, cron and either a queue supervisor or cron-based PHP execution. A VPS with Nginx/Apache or a compatible cPanel plan works. This project is a Laravel application; it is not a Cloudflare Workers/Sites deployment.
+Use an HTTPS PHP host with PHP 8.4.1+ (a current patched 8.4/8.5 release), required PHP extensions including `pdo_pgsql`, a PostgreSQL database, writable application storage, cron and either a queue supervisor or cron-based PHP execution. A VPS with Nginx/Apache or a compatible cPanel plan works. This project is a Laravel application; it is not a Cloudflare Workers/Sites deployment.
 
 Allow image uploads up to 10 MB by setting PHP `upload_max_filesize` to at least `10M` and `post_max_size` to at least `14M` for the web PHP handler. Restart PHP-FPM/Apache after changing these values. Also allow request bodies of at least 14 MB in the web server or proxy. If the admin reports that an image "did not reach the application," check these limits in the web PHP handler and proxy; command-line PHP settings may be different.
 
 The SRS proposed Laravel 13 / PHP 8.3+ as a baseline subject to host/dependency verification. The resolved release uses Laravel 13.36.0 and Symfony 8.1.9, so this lockfile requires **PHP 8.4.1+**. Do not ignore Composer platform checks to run it on PHP 8.2/8.3.
 
+## Vercel
+
+This project uses Vercel's official Container runtime (currently Beta) and Laravel's current [FrankenPHP deployment guide](https://vercel.com/kb/guide/laravel-php-with-docker), not a community PHP runtime or the Vite static preset. The root `vercel.json` sends every request to the container service. The Docker image builds Vite assets, installs production-only Composer dependencies, and serves only `/app/public`; Laravel requests are handled by `public/index.php`. Vercel terminates public HTTPS, and Laravel trusts the forwarded proxy headers only in production. Existing `APP_URL` configuration and HTTPS URL forcing apply in production while local development stays HTTP.
+
+In the Vercel project, use the repository root (`.`) as the **Root Directory** and the **Container** Framework Preset (not Vite); the CLI equivalent is `vercel project update --framework container --yes`. Keep the included `vercel.json`, `Dockerfile` and `Caddyfile` at that root. Leave the dashboard Build Command and Output Directory unset: the container build handles both the PHP application and the Vite assets. The `.dockerignore` excludes environment files, auth files, local databases, uploads, `node_modules`, `vendor`, tests and docs from the image build. Add environment variables for Production and separately for Preview/Development if those environments will be used. Redeploy after changing variables.
+
+Required production environment variables:
+
+| Variable | Value |
+|---|---|
+| `APP_ENV` | `production` |
+| `APP_DEBUG` | `false` |
+| `APP_KEY` | A new Laravel key, kept stable for this environment |
+| `APP_URL` | The canonical public HTTPS URL, for example `https://your-domain.example` |
+| `DB_CONNECTION` | `pgsql` |
+| `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | Credentials for an external, persistent PostgreSQL database (or configure `DB_URL` for the same driver) |
+| `SESSION_DRIVER` | `database` |
+| `SESSION_ENCRYPT` | `true` |
+| `SESSION_SECURE_COOKIE` | `true` |
+| `CACHE_STORE` | `database` |
+| `QUEUE_CONNECTION` | `database` |
+| `CAPTCHA_ENABLED` | `true` |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Live Cloudflare Turnstile keys |
+| `TURNSTILE_HOSTNAMES` | Comma-separated production hostname(s), without schemes or paths |
+
+Production boot explicitly rejects missing/invalid Turnstile configuration, debug mode, and test keys. Configure real mail delivery (`MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SCHEME`, `MAIL_FROM_ADDRESS`, and `MAIL_FROM_NAME`) if the booking and notification workflows need to send email. Use the SMTP provider's documented scheme/port combination.
+
+Generate a key locally without changing `.env` or printing the key to the terminal, then paste it into Vercel's `APP_KEY` value:
+
+```powershell
+$key = php artisan key:generate --show
+if ($LASTEXITCODE -ne 0) { throw "Laravel key generation failed." }
+Set-Clipboard -Value $key
+$key = $null
+```
+
+Paste from the clipboard directly into the Vercel dashboard and clear the clipboard afterward. Keep the key stable for the lifetime of that environment; generate a separate key for Preview/Development rather than sharing Production's key.
+
+The database, sessions, cache and queue must use shared external services; the container filesystem and local `database/database.sqlite` are not persistent. Run `php artisan migrate --force` as a separate release step against the configured database, never on container startup. This app's queue uses database-backed jobs and needs a worker; Vercel request containers do not run a permanent worker, so arrange an external worker or deliberately choose synchronous delivery after assessing request-time mail behavior.
+
+The current admin media uploader writes uploaded files directly to `public/images/uploads`. Those runtime writes are not durable or shared across Vercel instances; use external object storage and update the uploader before relying on uploaded media in production. The checked-in files under `public/images` are included in the image and their Blade `asset('images/...')` references resolve using `APP_URL`. Public uploads are excluded from the image.
+
+Laravel temporary storage is directed to `/tmp` in the container; this is only scratch space. Vercel's filesystem and local files are not durable. See Vercel's [Laravel deployment guide](https://vercel.com/kb/guide/laravel-php-with-docker) for deployment/runtime limits and Laravel's [deployment guide](https://laravel.com/docs/13.x/deployment) for production recommendations.
+
 ## Prepare the application
 
 1. Upload/extract the project outside the web document root, for example `/home/account/sparkling-tours`.
 2. Point the domain/subdomain document root to `/home/account/sparkling-tours/public`. Keep `app`, `.env`, `vendor`, `storage`, backups and the project ZIP outside the publicly served directory. Retain Laravel's `public/.htaccess` when using Apache.
-3. Create a dedicated MySQL database user. Create `.env` from the example and fill the production values below before running Composer/artisan in production.
+3. Create a dedicated PostgreSQL database and user. Create `.env` from the example and fill the production values below before running Composer/artisan in production.
 4. Keep `APP_KEY` stable after installation. Generate it only for a brand-new installation, not on every deployment; it protects encrypted staff secrets, sessions and outbox data.
 
 ```dotenv
@@ -21,12 +65,13 @@ APP_DEBUG=false
 APP_URL=https://your-real-domain.example
 SESSION_SECURE_COOKIE=true
 SESSION_ENCRYPT=true
-DB_CONNECTION=mysql
+DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
-DB_PORT=3306
+DB_PORT=5432
 DB_DATABASE=your_database
 DB_USERNAME=your_dedicated_user
 DB_PASSWORD=your_secret
+DB_SSLMODE=require
 QUEUE_CONNECTION=database
 CACHE_STORE=database
 SESSION_DRIVER=database
@@ -107,8 +152,8 @@ Configure real business identity, contacts, administrative email, payment instru
 
 ## Backups and restoration
 
-Back up MySQL, uploaded images, private documents (if retained), the deployed source/lockfiles, and the environment key/configuration securely outside the web root. Protect secrets separately and retain the `APP_KEY` with restricted access; it is needed to decrypt existing 2FA/outbox/session data.
+Back up PostgreSQL, uploaded images, private documents (if retained), the deployed source/lockfiles, and the environment key/configuration securely outside the web root. Protect secrets separately and retain the `APP_KEY` with restricted access; it is needed to decrypt existing 2FA/outbox/session data.
 
-Use your host's backup system or `mysqldump --single-transaction --routines --triggers --no-tablespaces --set-gtid-purged=OFF` with a protected credentials file. Put `--defaults-extra-file=/secure/path/mysql-backup.cnf` first after the command name; do not pass database passwords in command-line arguments. Save exports to a private location and encrypt off-site copies as appropriate.
+Use your host's backup system or `pg_dump --format=custom --file=/secure/path/database.dump --dbname=your_database` with a protected `PGPASSFILE`; do not pass database passwords in command-line arguments. Save exports to a private location and encrypt off-site copies as appropriate.
 
-To restore, place the site in maintenance mode, restore into a **separate** test database first, restore uploads and the correct environment key, run `php artisan migrate --force`, clear/rebuild caches, and verify counts, staff 2FA, a booking, an invoice and a private download. Switch the live configuration only after verification. Keep the previous working backup until the new site is verified. The release verification report records a clean MySQL export/import check; your hosting backups must also be tested on your actual infrastructure.
+To restore, place the site in maintenance mode, restore into a **separate** test database first, restore uploads and the correct environment key, run `php artisan migrate --force`, clear/rebuild caches, and verify counts, staff 2FA, a booking, an invoice and a private download. Switch the live configuration only after verification. Keep the previous working backup until the new site is verified. The release verification report records a clean MySQL export/import check; PostgreSQL backups must also be tested on your actual infrastructure.

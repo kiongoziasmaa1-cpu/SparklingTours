@@ -7,8 +7,8 @@ Start with **[ANZA_HAPA.md](ANZA_HAPA.md)** for Kiswahili installation instructi
 ## Requirements
 
 - 64-bit PHP **8.4.1 or later in the 8.x series**, preferably the current patched 8.4/8.5 release. The supplied lockfile targets Symfony 8.1 and is not compatible with PHP 8.2 or 8.3.
-- Extensions: BCMath, Ctype, cURL, DOM, Fileinfo, Filter, GD, Hash, Mbstring, OpenSSL, PCRE, PDO, PDO MySQL, Session, Tokenizer, XML and ZIP. PDO SQLite is used by the default automated test suite.
-- MySQL 8.0+, a database and a dedicated database user.
+- Extensions: BCMath, Ctype, cURL, DOM, Fileinfo, Filter, GD, Hash, Mbstring, OpenSSL, PCRE, PDO, PDO PostgreSQL, Session, Tokenizer, XML and ZIP. PDO SQLite is used by the default automated test suite.
+- PostgreSQL, a database and a dedicated database user.
 - Composer 2. Node 22.12+ / npm is needed only when rebuilding assets. Built CSS/JS and installed PHP vendor dependencies are included in the release ZIP.
 
 Laravel is locked in `composer.lock`; Bootstrap and Vite are locked in `package-lock.json`. Install from these locks, rather than updating dependencies during initial setup.
@@ -20,7 +20,7 @@ Staff sign in with their email and password and are taken directly to the admin 
 ## Quick local start
 
 1. Extract the ZIP. Open a terminal in the `sparkling-tours` folder (the folder containing `artisan`).
-2. Copy `.env.example` to `.env` and configure the local MySQL database credentials.
+2. Copy `.env.example` to `.env` and configure the local PostgreSQL database credentials.
 3. Run the following commands, one at a time:
 
 ```bash
@@ -62,7 +62,7 @@ php artisan app:doctor
 composer audit
 ```
 
-`php artisan test` uses an in-memory SQLite database by default. The release was also checked against MySQL; see `docs/VERIFICATION.md` for exact results and verification limits. Browser-based mobile/device testing and real external mail/CAPTCHA checks must be completed on the final hosting domain.
+`php artisan test` uses an in-memory SQLite database by default. Earlier release verification was performed against MySQL; see `docs/VERIFICATION.md` for exact results and verification limits. Verify the PostgreSQL deployment on your hosting environment before going live. Browser-based mobile/device testing and real external mail/CAPTCHA checks must be completed on the final hosting domain.
 
 ## Included files
 

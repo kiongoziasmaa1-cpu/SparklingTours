@@ -50,10 +50,13 @@ Create or select a Render PostgreSQL database in the same region and add its **i
 
 ```dotenv
 DB_CONNECTION=pgsql
+DATABASE_URL=<Render PostgreSQL internal URL>
 SESSION_DRIVER=database
 CACHE_STORE=database
 QUEUE_CONNECTION=database
 ```
+
+Remove any SQLite settings from the Render service or linked environment groups, especially `DB_CONNECTION=sqlite` and `DB_DATABASE=sparkling`. SQLite is only for local development; the Render image defaults to PostgreSQL and requires the database's `DATABASE_URL`.
 
 Set the shared production configuration above using the service's actual `onrender.com` or custom hostname. Set the Render **Pre-Deploy Command** to:
 

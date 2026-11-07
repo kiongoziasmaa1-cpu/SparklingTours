@@ -49,6 +49,7 @@ COPY --chown=www-data:www-data Caddyfile /etc/frankenphp/Caddyfile
 ENV PORT=10000 \
     APP_ENV=production \
     APP_DEBUG=false \
+    DB_CONNECTION=pgsql \
     LOG_CHANNEL=stderr \
     XDG_CONFIG_HOME=/tmp/caddy/config \
     XDG_DATA_HOME=/tmp/caddy/data \

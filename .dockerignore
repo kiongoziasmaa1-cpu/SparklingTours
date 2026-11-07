@@ -1,6 +1,7 @@
 .git
 .github
-.env*
+.env
+.env.*
 **/.env*
 .npmrc
 auth.json
@@ -15,10 +16,8 @@ storage
 bootstrap/cache/*.php
 database/*.sqlite
 database/*.sqlite-*
-database/mysql-demo.sql
 public/build
 public/hot
 public/.htaccess
-public/images/uploads
 phpunit.xml
 .phpunit.result.cache

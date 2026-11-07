@@ -1,7 +1,8 @@
 FROM dunglas/frankenphp:1-php8.4-bookworm AS base
 
 RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
-    && install-php-extensions bcmath gd pdo_pgsql zip
+    && install-php-extensions bcmath gd pdo_pgsql zip \
+    && setcap -r /usr/local/bin/frankenphp
 
 WORKDIR /app
 
@@ -45,13 +46,15 @@ COPY --from=dependencies --chown=www-data:www-data /app/vendor /app/vendor
 COPY --from=assets --chown=www-data:www-data /app/public/build /app/public/build
 COPY --chown=www-data:www-data Caddyfile /etc/frankenphp/Caddyfile
 
-ENV PORT=80 \
+ENV PORT=10000 \
     APP_ENV=production \
     APP_DEBUG=false \
     LOG_CHANNEL=stderr \
     XDG_CONFIG_HOME=/tmp/caddy/config \
     XDG_DATA_HOME=/tmp/caddy/data \
     LARAVEL_STORAGE_PATH=/tmp/laravel/storage
+
+EXPOSE 10000
 
 USER www-data
 

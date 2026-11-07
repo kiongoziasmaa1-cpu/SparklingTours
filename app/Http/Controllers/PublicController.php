@@ -18,7 +18,19 @@ class PublicController extends Controller
 {
     public function home()
     {
-        return view('public.home', ['galleries' => MediaAsset::where('gallery', true)->orderBy('sort_order')->get()]);
+        $destinationRegions = Region::with(['items' => fn ($query) => $query
+            ->published()
+            ->where('kind', 'destination')
+            ->with('media')
+            ->orderBy('name')])
+            ->whereIn('slug', ['zanzibar', 'mainland'])
+            ->orderByRaw("CASE slug WHEN 'zanzibar' THEN 0 ELSE 1 END")
+            ->get();
+
+        return view('public.home', [
+            'galleries' => MediaAsset::where('gallery', true)->orderBy('sort_order')->get(),
+            'destinationRegions' => $destinationRegions,
+        ]);
     }
 
     public function catalog(Request $r, ?string $region = null, ?string $category = null)

@@ -1,159 +1,96 @@
 # Hosting and release guide
 
-## Supported target
+The website, public routes, admin dashboard, booking workflows, and photos are the same on every host. Choose one production setup:
 
-Use an HTTPS PHP host with PHP 8.4.1+ (a current patched 8.4/8.5 release), required PHP extensions including `pdo_pgsql`, a PostgreSQL database, writable application storage, cron and either a queue supervisor or cron-based PHP execution. A VPS with Nginx/Apache or a compatible cPanel plan works. This project is a Laravel application; it is not a Cloudflare Workers/Sites deployment.
+| Host | Runtime | Database | Deployment files |
+|---|---|---|---|
+| Render | Docker / FrankenPHP | PostgreSQL | Root `Dockerfile` and `Caddyfile` |
+| Namecheap | PHP 8.4+ with cPanel/SSH or VPS | MySQL 8+ | Laravel `public` document root; no Docker required |
 
-Allow image uploads up to 10 MB by setting PHP `upload_max_filesize` to at least `10M` and `post_max_size` to at least `14M` for the web PHP handler. Restart PHP-FPM/Apache after changing these values. Also allow request bodies of at least 14 MB in the web server or proxy. If the admin reports that an image "did not reach the application," check these limits in the web PHP handler and proxy; command-line PHP settings may be different.
+This Laravel application is not a static Vite site. Do not configure the project as a static-site deployment. The local `.env.example` uses SQLite only for local development; production must use a persistent database.
 
-The SRS proposed Laravel 13 / PHP 8.3+ as a baseline subject to host/dependency verification. The resolved release uses Laravel 13.36.0 and Symfony 8.1.9, so this lockfile requires **PHP 8.4.1+**. Do not ignore Composer platform checks to run it on PHP 8.2/8.3.
+The dependency lockfile requires PHP **8.4.1+**. Do not bypass Composer platform checks to run PHP 8.2/8.3. Production also needs BCMath, GD, PDO and the PDO driver for the selected database (`pdo_pgsql` on Render or `pdo_mysql` on Namecheap). Use HTTPS, and configure PHP/web-server uploads for at least 10 MB (`upload_max_filesize=10M`, `post_max_size=14M`).
 
-## Vercel
+## Shared production configuration
 
-This project uses Vercel's official Container runtime (currently Beta) and Laravel's current [FrankenPHP deployment guide](https://vercel.com/kb/guide/laravel-php-with-docker), not a community PHP runtime or the Vite static preset. The root `vercel.json` sends every request to the container service. The Docker image builds Vite assets, installs production-only Composer dependencies, and serves only `/app/public`; Laravel requests are handled by `public/index.php`. Vercel terminates public HTTPS, and Laravel trusts the forwarded proxy headers only in production. Existing `APP_URL` configuration and HTTPS URL forcing apply in production while local development stays HTTP.
-
-In the Vercel project, use the repository root (`.`) as the **Root Directory** and the **Container** Framework Preset (not Vite); the CLI equivalent is `vercel project update --framework container --yes`. Keep the included `vercel.json`, `Dockerfile` and `Caddyfile` at that root. Leave the dashboard Build Command and Output Directory unset: the container build handles both the PHP application and the Vite assets. The `.dockerignore` excludes environment files, auth files, local databases, uploads, `node_modules`, `vendor`, tests and docs from the image build. Add environment variables for Production and separately for Preview/Development if those environments will be used. Redeploy after changing variables.
-
-Required production environment variables:
-
-| Variable | Value |
-|---|---|
-| `APP_ENV` | `production` |
-| `APP_DEBUG` | `false` |
-| `APP_KEY` | A new Laravel key, kept stable for this environment |
-| `APP_URL` | The canonical public HTTPS URL, for example `https://your-domain.example` |
-| `DB_CONNECTION` | `pgsql` |
-| `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | Credentials for an external, persistent PostgreSQL database (or configure `DB_URL` for the same driver) |
-| `SESSION_DRIVER` | `database` |
-| `SESSION_ENCRYPT` | `true` |
-| `SESSION_SECURE_COOKIE` | `true` |
-| `CACHE_STORE` | `database` |
-| `QUEUE_CONNECTION` | `database` |
-| `CAPTCHA_ENABLED` | `true` |
-| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Live Cloudflare Turnstile keys |
-| `TURNSTILE_HOSTNAMES` | Comma-separated production hostname(s), without schemes or paths |
-
-Production boot explicitly rejects missing/invalid Turnstile configuration, debug mode, and test keys. Configure real mail delivery (`MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_SCHEME`, `MAIL_FROM_ADDRESS`, and `MAIL_FROM_NAME`) if the booking and notification workflows need to send email. Use the SMTP provider's documented scheme/port combination.
-
-Generate a key locally without changing `.env` or printing the key to the terminal, then paste it into Vercel's `APP_KEY` value:
-
-```powershell
-$key = php artisan key:generate --show
-if ($LASTEXITCODE -ne 0) { throw "Laravel key generation failed." }
-Set-Clipboard -Value $key
-$key = $null
-```
-
-Paste from the clipboard directly into the Vercel dashboard and clear the clipboard afterward. Keep the key stable for the lifetime of that environment; generate a separate key for Preview/Development rather than sharing Production's key.
-
-The database, sessions, cache and queue must use shared external services; the container filesystem and local `database/database.sqlite` are not persistent. Run `php artisan migrate --force` as a separate release step against the configured database, never on container startup. This app's queue uses database-backed jobs and needs a worker; Vercel request containers do not run a permanent worker, so arrange an external worker or deliberately choose synchronous delivery after assessing request-time mail behavior.
-
-The current admin media uploader writes uploaded files directly to `public/images/uploads`. Those runtime writes are not durable or shared across Vercel instances; use external object storage and update the uploader before relying on uploaded media in production. The checked-in files under `public/images` are included in the image and their Blade `asset('images/...')` references resolve using `APP_URL`. Public uploads are excluded from the image.
-
-Laravel temporary storage is directed to `/tmp` in the container; this is only scratch space. Vercel's filesystem and local files are not durable. See Vercel's [Laravel deployment guide](https://vercel.com/kb/guide/laravel-php-with-docker) for deployment/runtime limits and Laravel's [deployment guide](https://laravel.com/docs/13.x/deployment) for production recommendations.
-
-## Prepare the application
-
-1. Upload/extract the project outside the web document root, for example `/home/account/sparkling-tours`.
-2. Point the domain/subdomain document root to `/home/account/sparkling-tours/public`. Keep `app`, `.env`, `vendor`, `storage`, backups and the project ZIP outside the publicly served directory. Retain Laravel's `public/.htaccess` when using Apache.
-3. Create a dedicated PostgreSQL database and user. Create `.env` from the example and fill the production values below before running Composer/artisan in production.
-4. Keep `APP_KEY` stable after installation. Generate it only for a brand-new installation, not on every deployment; it protects encrypted staff secrets, sessions and outbox data.
+Set these variables in the host's protected environment-variable settings, not in Git or a publicly served directory:
 
 ```dotenv
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://your-real-domain.example
-SESSION_SECURE_COOKIE=true
+APP_KEY=base64:your-existing-generated-key
 SESSION_ENCRYPT=true
-DB_CONNECTION=pgsql
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_DATABASE=your_database
-DB_USERNAME=your_dedicated_user
-DB_PASSWORD=your_secret
-DB_SSLMODE=require
-QUEUE_CONNECTION=database
-CACHE_STORE=database
-SESSION_DRIVER=database
+SESSION_SECURE_COOKIE=true
+CAPTCHA_ENABLED=true
+TURNSTILE_SITE_KEY=your-live-site-key
+TURNSTILE_SECRET_KEY=your-live-secret-key
+TURNSTILE_HOSTNAMES=your-real-domain.example
 MAIL_MAILER=smtp
-MAIL_HOST=your_smtp_host
+MAIL_HOST=your-smtp-host
 MAIL_PORT=587
-MAIL_USERNAME=your_smtp_username
-MAIL_PASSWORD=your_smtp_password
+MAIL_USERNAME=your-smtp-username
+MAIL_PASSWORD=your-smtp-password
 MAIL_SCHEME=smtp
 MAIL_FROM_ADDRESS=bookings@your-real-domain.example
 MAIL_FROM_NAME="Your business name"
-CAPTCHA_ENABLED=true
-TURNSTILE_SITE_KEY=your_live_site_key
-TURNSTILE_SECRET_KEY=your_live_secret_key
-TURNSTILE_HOSTNAMES=your-real-domain.example,www.your-real-domain.example
 ```
 
-Use the SMTP provider's documented scheme/port combination; some providers use `smtps` on port 465. The `.example` values above are placeholders, not working credentials.
+Generate `APP_KEY` once for a new environment with `php artisan key:generate --show`, then save it in the hosting dashboard. Keep it unchanged across deployments and backups. Never use development/test Turnstile keys in production. Add every public domain to both the Turnstile widget and `TURNSTILE_HOSTNAMES`. Production intentionally rejects missing CAPTCHA credentials, disabled verification, test keys, and `APP_DEBUG=true`.
 
-Create a Managed Cloudflare Turnstile widget for the exact public domain(s). Add the allowed hostnames in both Cloudflare and the environment. The application sends tokens to Siteverify and checks `success`, hostname and action (`tour_booking`, `transport_booking`, `contact`). Never deploy test keys, a disabled verifier or a frontend-only CAPTCHA. The application refuses the development bypass in production.
+The application seeder uses create-if-missing behavior to install baseline regions, gallery media, About/Privacy/Terms pages, homepage settings and sample catalogue. It does not overwrite existing settings or republish routes administrators have hidden. On a new deployment, migrate and seed the selected production database. **Never run `migrate:fresh` against a live database.** Existing data remains on the original database; point the deployment at that same database to retain it.
 
-## Install and launch
+Create the first administrator securely using `php artisan staff:create your-email@example.com`. The command prompts for a password and does not accept a password as a command argument. No default administrator is installed.
 
-```bash
-composer install --no-dev --optimize-autoloader
-php artisan key:generate
-php artisan migrate --seed --force
-php artisan staff:create operator@your-real-domain.example
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-php artisan app:doctor
+## Render
+
+Create a Render **Web Service** from this repository. Select the `main` branch, Docker runtime, and root `Dockerfile`. The included Docker image installs PHP 8.4, PostgreSQL support, and Vite assets; it runs FrankenPHP without the low-port file capability and listens on Render's `PORT` (default `10000`). The root `Dockerfile` is specific to Render/container hosting; do not use it for Namecheap cPanel.
+
+Create or select a Render PostgreSQL database in the same region and add its **internal** URL as `DATABASE_URL` in the web service environment. Also set:
+
+```dotenv
+DB_CONNECTION=pgsql
+SESSION_DRIVER=database
+CACHE_STORE=database
+QUEUE_CONNECTION=database
 ```
 
-Run `key:generate` only for this first installation. For later releases, keep the existing `.env`, key and database and run the remaining applicable migration/cache commands. Do not use `migrate:fresh` against customer data.
+Set the shared production configuration above using the service's actual `onrender.com` or custom hostname. Set the Render **Pre-Deploy Command** to:
 
-The release includes `public/build` so Node is not required on the production server. If frontend source changes, build with `npm ci --ignore-scripts` and `npm run build` before uploading the new assets. Production does not require a permanent Node process or Vite development server.
-
-Ensure the PHP runtime user can write to `storage` and `bootstrap/cache`, and only administrators can read `.env`. Typical Unix directory permissions are 0755/0775 depending on the host's ownership model; avoid world-writable 0777 permissions. Uploaded photographs are re-encoded into `public/images/uploads`; preserve that directory on updates. Private PDF temp files stay under `storage/app/private`.
-
-Use the host's HTTPS redirect. If a reverse proxy terminates TLS, configure Laravel trusted proxies for the actual proxy addresses, not arbitrary client-supplied forwarded headers. Verify secure request detection, secure cookies and generated HTTPS links.
-
-## Queues and scheduler
-
-On a VPS, supervise:
-
-```bash
-php /home/account/sparkling-tours/artisan queue:work database --sleep=3 --tries=4 --timeout=60
+```sh
+php artisan migrate --force && php artisan db:seed --force
 ```
 
-Use the same PHP 8.4+ binary as the website. Restart workers after each deployment with `php artisan queue:restart`.
+After pushing changes, use **Manual Deploy → Deploy latest commit**. The build log must not show `setcap CAP_NET_BIND_SERVICE=+eip`; runtime logs must show FrankenPHP starting without `Operation not permitted`. Check `https://your-service.onrender.com/up` and the public pages after deployment. Render's container filesystem is ephemeral: attach a persistent disk at `/app/public/images/uploads` for admin-uploaded photos, and ensure the service user can write there. Bundled photos under `public/images` are part of the image and do not need a disk.
 
-Scheduler cron (once per minute):
+If queued mail is enabled, configure a Render background worker for `php artisan queue:work database --sleep=3 --tries=4 --timeout=60`, and a scheduled task for `php artisan schedule:run`. Do not expect a web service to run permanent workers automatically.
 
-```cron
-* * * * * cd /home/account/sparkling-tours && /path/to/php artisan schedule:run >> /home/account/cron.log 2>&1
+## Namecheap
+
+Use Namecheap cPanel/SSH or a VPS plan that provides the required PHP **8.4.1+**, extensions including `pdo_mysql`, MySQL 8+, HTTPS, writable storage, and a way to set the site's document root to the project's `public` directory. Confirm those capabilities in the specific plan before purchase; shared hosting plans differ. If the cPanel plan cannot point the domain to `public`, use a supported VPS or ask Namecheap support for a secure Laravel document-root setup. Do not move `.env`, `app`, or `vendor` into a publicly served directory.
+
+Create a MySQL database and dedicated user in cPanel. Upload the project outside the web root, set the domain document root to `<project>/public`, and configure the protected environment:
+
+```dotenv
+DB_CONNECTION=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=cpanel_database_name
+DB_USERNAME=cpanel_database_user
+DB_PASSWORD=database_password
+SESSION_DRIVER=database
+CACHE_STORE=database
+QUEUE_CONNECTION=database
 ```
 
-The scheduler retries pending outbox dispatch and recovers stale delivery claims. On shared hosting without supervised workers, add a separate per-minute cron using a host-supported lock to prevent overlapping workers:
+Use the exact database and username shown by cPanel; they are often prefixed with the cPanel account name. Add the shared production configuration and real Turnstile/mail values. From SSH or cPanel Terminal, run `composer install --no-dev --optimize-autoloader`, then `php artisan migrate --force` and `php artisan db:seed --force`. Run `php artisan config:cache` after the environment is complete. Keep `storage` and `bootstrap/cache` writable by the PHP user. If the selected Namecheap plan cannot run Composer/Artisan, prepare dependencies with a compatible PHP 8.4 build environment, upload them, and confirm the host's platform requirements before launch.
 
-```cron
-* * * * * cd /home/account/sparkling-tours && flock -n /home/account/sparkling-worker.lock /path/to/php artisan queue:work database --stop-when-empty --tries=4 --timeout=60 >> /home/account/worker.log 2>&1
-```
+The standard Laravel `public/.htaccess` is included for Apache. Do not replace it with the Render `Caddyfile`. Set up a cron job for `php artisan schedule:run` and a supervised queue worker if using database queues; if the plan cannot run workers, configure a persistent worker through a supported VPS process manager rather than assuming email jobs will execute.
 
-Check the host's availability of `flock` or use its equivalent single-instance scheduler. If the plan cannot run cron/queue jobs, choose a plan that can; the notification workflow depends on this. A `sent` outbox entry means the configured mail transport accepted the message, not proof that the recipient read or received it. SMTP recovery is at least once; a crash after SMTP handoff may cause a retry of a message.
+## Preserve data and verify the site
 
-## cPanel details
+Admin-uploaded images are stored under `public/images/uploads`. On Render, preserve them on a persistent disk or move them to object storage before relying on them across deploys. On Namecheap, include that directory in backups and do not overwrite/delete it during uploads. The checked-in photographs under `public/images` ship with the application.
 
-- Use MultiPHP Manager or the plan's equivalent to select a supported PHP version and required extensions.
-- Assign the subdomain/addon domain's document root to the application's `public` folder. If the plan cannot change the main-domain root, use a subdomain or ask the host for a secure Laravel deployment layout.
-- Supply the cPanel-prefixed database/user names exactly in `.env`.
-- Run commands in Terminal/SSH if available. The included vendor/build files support hosts without server-side build tools, but a secure way to run initial migrations and the prompted admin command is still required.
-- Do not add a public web installer, permanent default password or browser route that runs arbitrary artisan commands.
+After deployment, verify `/up`, `/`, `/about`, `/tours`, destination pages for Zanzibar and Mainland, `/transport`, `/contact`, `/privacy`, `/terms`, `/photo-credits`, and `/login`. Sign in with the administrator account you created, submit a test request, confirm email delivery, and check that all images load. Also complete a real Turnstile test on the production hostname. Deployment configuration cannot validate hosting credentials or external services until tested on the chosen host.
 
-## Before accepting customers
-
-Configure real business identity, contacts, administrative email, payment instructions, actual routes/fare capacities, hotel arrangements and policies. Replace or unpublish illustrative catalogue data, then disable the demo banner. Send a real test email to an address you control, complete live Turnstile checks on the actual domain, run a booking/invoice/deposit test under your operating procedure, and check mobile/desktop browsers. Test backup restoration and expiry of private invoice links.
-
-## Backups and restoration
-
-Back up PostgreSQL, uploaded images, private documents (if retained), the deployed source/lockfiles, and the environment key/configuration securely outside the web root. Protect secrets separately and retain the `APP_KEY` with restricted access; it is needed to decrypt existing 2FA/outbox/session data.
-
-Use your host's backup system or `pg_dump --format=custom --file=/secure/path/database.dump --dbname=your_database` with a protected `PGPASSFILE`; do not pass database passwords in command-line arguments. Save exports to a private location and encrypt off-site copies as appropriate.
-
-To restore, place the site in maintenance mode, restore into a **separate** test database first, restore uploads and the correct environment key, run `php artisan migrate --force`, clear/rebuild caches, and verify counts, staff 2FA, a booking, an invoice and a private download. Switch the live configuration only after verification. Keep the previous working backup until the new site is verified. The release verification report records a clean MySQL export/import check; PostgreSQL backups must also be tested on your actual infrastructure.
+Back up the production database, uploaded photos, and the original `APP_KEY` securely. Test restoring a backup to a separate database before changing production data.

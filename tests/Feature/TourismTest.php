@@ -102,6 +102,76 @@ class TourismTest extends TestCase
         $this->get('/transport')->assertDontSee('needs_accommodation', false);
     }
 
+    public function test_reseeding_preserves_site_content_and_keeps_all_homepage_gallery_images_available(): void
+    {
+        SiteSetting::setValue('about_text', 'Operator-authored About content.');
+        $airport = TransportRoute::where('slug', 'airport-stone-town')->firstOrFail();
+        $airport->update(['published' => false]);
+
+        $this->seed();
+
+        $this->assertSame('Operator-authored About content.', SiteSetting::valueFor('about_text'));
+        $this->assertFalse($airport->fresh()->published);
+        $this->assertSame(7, MediaAsset::where('gallery', true)->count());
+
+        foreach (MediaAsset::where('gallery', true)->get() as $photo) {
+            $this->assertFileExists(public_path($photo->path));
+        }
+
+        foreach (['about', 'privacy', 'terms'] as $slug) {
+            $this->assertDatabaseHas('pages', ['slug' => $slug, 'published' => true]);
+        }
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Most preferable places')
+            ->assertSee('zanzibar-section', false)
+            ->assertSee('mainland-section', false)
+            ->assertSee('Discover Zanzibar.')
+            ->assertSee('Explore Tanzania Mainland.')
+            ->assertSee('Operator-authored About content.');
+        $this->get('/about')
+            ->assertOk()
+            ->assertSee('Our mission')
+            ->assertSee('Our vision');
+    }
+
+    public function test_render_database_url_is_used_when_db_url_is_empty(): void
+    {
+        $databaseUrl = 'pgsql://render-user:render-password@db.example:5432/sparkling';
+        $environmentKeys = ['DB_URL', 'DATABASE_URL'];
+        $originalValues = [];
+
+        foreach ($environmentKeys as $key) {
+            $originalValues[$key] = [
+                'env' => array_key_exists($key, $_ENV) ? $_ENV[$key] : null,
+                'server' => array_key_exists($key, $_SERVER) ? $_SERVER[$key] : null,
+            ];
+        }
+
+        try {
+            $_ENV['DB_URL'] = $_SERVER['DB_URL'] = '';
+            $_ENV['DATABASE_URL'] = $_SERVER['DATABASE_URL'] = $databaseUrl;
+            $configuration = require config_path('database.php');
+
+            $this->assertSame($databaseUrl, $configuration['connections']['pgsql']['url']);
+        } finally {
+            foreach ($originalValues as $key => $values) {
+                if ($values['env'] === null) {
+                    unset($_ENV[$key]);
+                } else {
+                    $_ENV[$key] = $values['env'];
+                }
+
+                if ($values['server'] === null) {
+                    unset($_SERVER[$key]);
+                } else {
+                    $_SERVER[$key] = $values['server'];
+                }
+            }
+        }
+    }
+
     public function test_tour_book_now_collects_contact_details_and_creates_distinct_admin_booking_request(): void
     {
         $tour = CatalogItem::where('slug', 'stone-town-and-coast')->firstOrFail();

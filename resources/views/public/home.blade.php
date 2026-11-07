@@ -55,8 +55,42 @@
 
         </div>
         <h3>{{$feature[1]}}</h3><p class="small mt-3 mb-0">{{$feature[2]}}</p></div></div>@endforeach</div></div></section>
-@if(($site['demo_mode']??'1')==='1')
-<section class="section-pad testimonials-section" aria-labelledby="testimonials-heading">
+        @foreach($destinationRegions as $region)
+        <section class="section-pad destination-section {{$region->slug}}-section">
+            <div class="container">
+                <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+                    <div>
+                        <div class="eyebrow">{{ $region->slug === 'zanzibar' ? 'Island escapes' : 'Wildlife & landscapes' }}</div>
+                        <h2>{{ $region->slug === 'zanzibar' ? 'Discover Zanzibar.' : 'Explore Tanzania Mainland.' }}</h2>
+                        <p class="mb-0">{{ $region->description }}</p>
+                    </div>
+                    <a class="btn btn-outline-primary" href="{{ route('catalog.index', [$region->slug, 'destinations']) }}">Explore {{ $region->name }} →</a>
+                </div>
+                <div class="row g-4">
+                    @forelse($region->items as $item)
+                        <div class="col-md-6 col-lg-3">
+                            <article class="card h-100">
+                                <a href="{{ route('catalog.detail', $item->slug) }}">
+                                    <img class="card-photo" src="{{ $item->media?->url() ?? asset(!empty($site['fallback_path']) ? $site['fallback_path'] : 'images/zanzibar-beach.jpg') }}" alt="{{ $item->media?->alt ?? $item->name }}" loading="lazy">
+                                </a>
+                                <div class="card-body d-flex flex-column">
+                                    <h3 class="card-title"><a class="text-decoration-none" href="{{ route('catalog.detail', $item->slug) }}">{{ $item->displayName() }}</a></h3>
+                                    <p class="card-description">{{ $item->summary }}</p>
+                                    <a class="btn btn-outline-primary btn-sm mt-auto align-self-start" href="{{ route('catalog.detail', $item->slug) }}">{{ __('ui.details') }} →</a>
+                                </div>
+                            </article>
+                        </div>
+                    @empty
+                        <div class="col-12">
+                            <p class="data-empty mb-0">Our team is preparing destinations for this region. <a href="{{ route('contact') }}">Contact us to plan a visit.</a></p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+        </section>
+        @endforeach
+        @if(($site['demo_mode']??'1')==='1')
+        <section class="section-pad testimonials-section" aria-labelledby="testimonials-heading">
     <div class="container">
         <div class="row g-4">
             <div class="col-lg-8">
@@ -67,6 +101,7 @@
                     thoughtful planning, warm hospitality, local expertise and unforgettable
                     moments across Tanzania and Zanzibar.
                 </p>
+                <p class="small mt-3 mb-0">Illustrative examples only; replace with verified guest feedback before publishing.</p>
             </div>
         </div>
 

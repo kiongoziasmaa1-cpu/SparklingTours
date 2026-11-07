@@ -1,11 +1,11 @@
 # Maelekezo ya kuanza — Sparkling Tours and Safaris
 
-Project hii ina website, dashboard, booking za tour, accommodation preferences, booking za transport na invoices. Muonekano wake umetengenezwa kwa Blade na Bootstrap 5; backend ni Laravel/PHP na database ni MySQL.
+Project hii ina website, dashboard, booking za tour, accommodation preferences, booking za transport na invoices. Muonekano wake umetengenezwa kwa Blade na Bootstrap 5; backend ni Laravel/PHP. Local hutumia SQLite; production inaweza kutumia PostgreSQL (Render) au MySQL (Namecheap).
 
 ## 1. Hakikisha una mahitaji haya
 
-- PHP **8.4.1 au toleo jipya la 8.x** lenye extensions zilizo kwenye README. XAMPP yenye PHP 8.2 haitoshi kwa lockfile ya project hii. Unaweza kutumia mazingira yenye PHP 8.4 iliyosasishwa, kwa mfano Laravel Herd pamoja na MySQL.
-- MySQL 8.0 au zaidi.
+- PHP **8.4.1 au toleo jipya la 8.x** lenye extensions zilizo kwenye README. XAMPP yenye PHP 8.2 haitoshi kwa lockfile ya project hii. Unaweza kutumia mazingira yenye PHP 8.4 iliyosasishwa, kwa mfano Laravel Herd.
+- PDO SQLite kwa local; PostgreSQL kwa Render au MySQL 8.0+ kwa Namecheap.
 - Composer 2.
 - Node/npm utazihitaji tu ukibadilisha CSS au JavaScript na kutaka kuzijenga upya. Faili zilizojengwa tayari zimo ndani ya ZIP.
 
@@ -13,11 +13,11 @@ Kwenye PowerShell, hakikisha `php -v` inaonyesha PHP 8.4.1 au zaidi kabla ya kua
 
 Staff huingia kwa email na password kisha hufikishwa moja kwa moja kwenye admin dashboard. Jaribio la login limewekewa rate limit.
 
-## 2. Fungua ZIP na tengeneza database
+## 2. Fungua project
 
 Extract ZIP. Fungua folder `sparkling-tours`; ndani yake utaona `artisan`, `composer.json`, `app` na `public`.
 
-Kwenye MySQL/phpMyAdmin tengeneza database inayoitwa `sparkling_tours`. Tumia `utf8mb4_unicode_ci`. Kwa hosting, tengeneza pia user maalumu wa database na mpe ruhusa za database hiyo.
+Kwa matumizi ya local huna haja ya kusetup database server. Laravel itatumia SQLite. Tengeneza database ya PostgreSQL au MySQL tu kwa production kulingana na hosting utakayochagua.
 
 ## 3. Andaa `.env`
 
@@ -33,30 +33,37 @@ Linux/macOS:
 cp .env.example .env
 ```
 
-Fungua `.env` na uweke taarifa zako:
+Fungua `.env`. Local tumia SQLite:
 
 ```dotenv
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=sparkling_tours
-DB_USERNAME=database_user_wako
-DB_PASSWORD=password_ya_database
+APP_ENV=local
+DB_CONNECTION=sqlite
+DB_DATABASE=database/database.sqlite
+SESSION_DRIVER=file
+CACHE_STORE=file
+QUEUE_CONNECTION=sync
 ```
 
-Tumia jina na password halisi ulizotengeneza. `.env` halitakiwi kuwekwa kwenye sehemu inayofunguliwa moja kwa moja na browser.
+`.env` halitakiwi kuwekwa kwenye sehemu inayofunguliwa moja kwa moja na browser wala kupakiwa GitHub.
 
-## 4. Weka dependencies na schema
+### Kuchagua hosting
+
+- **Render:** Dockerfile ya root hutumia FrankenPHP, PostgreSQL na Render `PORT`. Fuata [mwongozo wa hosting](docs/HOSTING.md#render).
+- **Namecheap:** tumia cPanel/SSH au VPS inayotoa PHP 8.4.1+, extensions zinazohitajika, MySQL 8+, na uwezo wa kuelekeza document root kwenye `public`. Fuata [mwongozo wa hosting](docs/HOSTING.md#namecheap).
+- Local `.env` ni tofauti na variables za Render/Namecheap; usibadilishe local SQLite iwe production database ili website ianze.
+
+## 4. Weka dependencies, schema na data za website
 
 Fungua terminal ndani ya folder yenye `artisan`, kisha endesha amri hizi moja baada ya nyingine:
 
 ```bash
 composer install
 php artisan key:generate
-php artisan migrate --seed
+php artisan migrate --force
+php artisan db:seed --force
 ```
 
-Vendor na assets zimejumuishwa ndani ya ZIP; `composer install` itahakiki dependencies kulingana na lockfile. `migrate --seed` inaweka tables na huduma/bei za mfano. Haina account ya admin yenye password ya kawaida.
+Vendor na assets zimejumuishwa ndani ya ZIP; `composer install` itahakiki dependencies kulingana na lockfile. Migrations huunda tables; seeder huweka kurasa za mwanzo, picha za gallery na catalogue. Seeder inaweza kurudiwa bila kufuta mipangilio iliyopo. Haina account ya admin yenye password ya kawaida.
 
 Ikiwa unaamua kuimport `database/mysql-demo.sql` kupitia phpMyAdmin badala yake, import kwenye database mpya tupu; usiunganishe njia mbili bila kuelewa hali ya migrations. Njia inayopendekezwa ni amri ya migrations hapo juu.
 

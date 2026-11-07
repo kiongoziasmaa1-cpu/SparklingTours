@@ -45,8 +45,6 @@ COPY --from=dependencies --chown=www-data:www-data /app/vendor /app/vendor
 COPY --from=assets --chown=www-data:www-data /app/public/build /app/public/build
 COPY --chown=www-data:www-data Caddyfile /etc/frankenphp/Caddyfile
 
-RUN setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/frankenphp
-
 ENV PORT=80 \
     APP_ENV=production \
     APP_DEBUG=false \

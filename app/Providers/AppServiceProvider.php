@@ -37,7 +37,12 @@ class AppServiceProvider extends ServiceProvider
             if ($debugWasEnabled) {
                 throw new \RuntimeException('Disable debug output in production.');
             }
-            URL::forceRootUrl(config('app.url'));
+            $appUrl = parse_url((string) config('app.url'));
+            if (! is_array($appUrl) || empty($appUrl['scheme']) || empty($appUrl['host'])) {
+                throw new \RuntimeException('APP_URL must be an absolute URL with a hostname.');
+            }
+            $rootUrl = $appUrl['scheme'].'://'.$appUrl['host'].(isset($appUrl['port']) ? ':'.$appUrl['port'] : '');
+            URL::forceRootUrl($rootUrl);
             URL::forceScheme('https');
         }
         View::composer('*', function ($view) {

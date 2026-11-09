@@ -81,6 +81,46 @@ class TourismTest extends TestCase
         return app(BookingSubmissionService::class)->submit('tour', $d, app(TourPricingService::class)->quote($d), (string) Str::uuid(), hash('sha256', 'fixture-guest'));
     }
 
+    public function test_production_asset_urls_use_the_app_url_origin_only(): void
+    {
+        $originalConfig = [
+            'env' => app()->environment(),
+            'app.debug' => config('app.debug'),
+            'app.url' => config('app.url'),
+            'tourism.captcha' => config('tourism.captcha'),
+        ];
+
+        try {
+            app()['env'] = 'production';
+            config([
+                'app.debug' => false,
+                'app.url' => 'https://sparklingtours.onrender.com/a2d670eb3a32e45f9f25f58cb404dc2f',
+                'tourism.captcha' => [
+                    'enabled' => true,
+                    'secret' => 'live-secret',
+                    'site_key' => 'live-site-key',
+                    'hostnames' => ['sparklingtours.onrender.com'],
+                ],
+            ]);
+
+            (new AppServiceProvider(app()))->boot();
+
+            $this->assertSame(
+                'https://sparklingtours.onrender.com/build/assets/app.css',
+                asset('build/assets/app.css'),
+            );
+            $this->assertSame(
+                'https://sparklingtours.onrender.com/about',
+                route('pages.show', 'about'),
+            );
+        } finally {
+            app()['env'] = $originalConfig['env'];
+            config($originalConfig);
+            url()->forceRootUrl(null);
+            url()->forceScheme(null);
+        }
+    }
+
     public function test_public_pages_render_and_navigation_has_independent_transport_without_hotel_menu(): void
     {
         foreach (['/', '/tours', '/explore/zanzibar/destinations', '/explore/mainland/tours', '/explore/zanzibar/activities', '/explore/zanzibar/food', '/explore/zanzibar/travel-guide', '/transport', '/about', '/contact', '/privacy', '/terms', '/photo-credits', '/plan-your-trip', '/transport/airport-stone-town', '/experience/stone-town-and-coast', '/sitemap.xml'] as $path) {
@@ -136,40 +176,13 @@ class TourismTest extends TestCase
             ->assertSee('Our vision');
     }
 
-    public function test_render_database_url_is_used_when_db_url_is_empty(): void
+    public function test_mysql_connection_is_configured_for_cpanel(): void
     {
-        $databaseUrl = 'pgsql://render-user:render-password@db.example:5432/sparkling';
-        $environmentKeys = ['DB_URL', 'DATABASE_URL'];
-        $originalValues = [];
+        $configuration = require config_path('database.php');
 
-        foreach ($environmentKeys as $key) {
-            $originalValues[$key] = [
-                'env' => array_key_exists($key, $_ENV) ? $_ENV[$key] : null,
-                'server' => array_key_exists($key, $_SERVER) ? $_SERVER[$key] : null,
-            ];
-        }
-
-        try {
-            $_ENV['DB_URL'] = $_SERVER['DB_URL'] = '';
-            $_ENV['DATABASE_URL'] = $_SERVER['DATABASE_URL'] = $databaseUrl;
-            $configuration = require config_path('database.php');
-
-            $this->assertSame($databaseUrl, $configuration['connections']['pgsql']['url']);
-        } finally {
-            foreach ($originalValues as $key => $values) {
-                if ($values['env'] === null) {
-                    unset($_ENV[$key]);
-                } else {
-                    $_ENV[$key] = $values['env'];
-                }
-
-                if ($values['server'] === null) {
-                    unset($_SERVER[$key]);
-                } else {
-                    $_SERVER[$key] = $values['server'];
-                }
-            }
-        }
+        $this->assertSame('mysql', $configuration['connections']['mysql']['driver']);
+        $this->assertSame('3306', (string) $configuration['connections']['mysql']['port']);
+        $this->assertSame('utf8mb4', $configuration['connections']['mysql']['charset']);
     }
 
     public function test_tour_book_now_collects_contact_details_and_creates_distinct_admin_booking_request(): void

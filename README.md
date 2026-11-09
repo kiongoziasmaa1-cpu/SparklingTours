@@ -7,8 +7,8 @@ Start with **[ANZA_HAPA.md](ANZA_HAPA.md)** for Kiswahili installation instructi
 ## Requirements
 
 - 64-bit PHP **8.4.1 or later in the 8.x series**, preferably the current patched 8.4/8.5 release. The supplied lockfile targets Symfony 8.1 and is not compatible with PHP 8.2 or 8.3.
-- Extensions: BCMath, Ctype, cURL, DOM, Fileinfo, Filter, GD, Hash, Mbstring, OpenSSL, PCRE, PDO, PDO SQLite, Session, Tokenizer, XML and ZIP. Enable PDO PostgreSQL for Render/PostgreSQL or PDO MySQL for Namecheap/MySQL.
-- SQLite is the local-development default. Production requires a persistent PostgreSQL or MySQL database and a dedicated database user.
+- Extensions: BCMath, Ctype, cURL, DOM, Fileinfo, Filter, GD, Hash, Mbstring, OpenSSL, PCRE, PDO MySQL, Session, Tokenizer, XML and ZIP. MySQL 8+ is the configured database.
+- The project uses MySQL for local development and production. PHPUnit tests use an in-memory SQLite database.
 - Composer 2. Node 22.12+ / npm is needed only when rebuilding assets. Built CSS/JS and installed PHP vendor dependencies are included in the release ZIP.
 
 Laravel is locked in `composer.lock`; Bootstrap and Vite are locked in `package-lock.json`. Install from these locks, rather than updating dependencies during initial setup.
@@ -20,7 +20,7 @@ Staff sign in with their email and password and are taken directly to the admin 
 ## Quick local start
 
 1. Extract the ZIP. Open a terminal in the `sparkling-tours` folder (the folder containing `artisan`).
-2. Copy `.env.example` to `.env`. The example uses SQLite for local development and does not need a database server.
+2. Copy `.env.example` to `.env`, then set `DB_DATABASE`, `DB_USERNAME` and `DB_PASSWORD` for your MySQL server. For Namecheap, use the exact database and username shown in cPanel.
 3. Run the following commands, one at a time:
 
 ```bash
@@ -39,7 +39,7 @@ When using the production `database` queue driver locally, start the notificatio
 php artisan queue:work --tries=4 --timeout=60
 ```
 
-Run `php artisan schedule:work` in a third terminal for outbox recovery, or configure the production scheduler described in the hosting guide. The local example uses file sessions/cache and a synchronous queue; Render and Namecheap production should use their database-backed settings and a persistent worker.
+Run `php artisan schedule:work` in a third terminal for outbox recovery, or configure the production scheduler described in the hosting guide. The local example uses file sessions/cache and a synchronous queue; production should use its database-backed settings and a persistent worker.
 
 `.env.example` is explicitly for local development: CAPTCHA verification is disabled in `APP_ENV=local`, and mail uses the log transport. Production refuses this CAPTCHA bypass. Real email delivery and live Turnstile require your own configuration.
 
@@ -62,7 +62,7 @@ php artisan app:doctor
 composer audit
 ```
 
-`php artisan test` uses an in-memory SQLite database by default. Follow the hosting guide's PostgreSQL checks on Render or MySQL checks on Namecheap before going live. Browser-based mobile/device testing and real external mail/CAPTCHA checks must be completed on the final hosting domain.
+`php artisan test` uses an in-memory SQLite database by default. Follow the hosting guide's MySQL checks before going live. Browser-based mobile/device testing and real external mail/CAPTCHA checks must be completed on the final hosting domain.
 
 ## Included files
 

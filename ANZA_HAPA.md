@@ -1,11 +1,11 @@
 # Maelekezo ya kuanza — Sparkling Tours and Safaris
 
-Project hii ina website, dashboard, booking za tour, accommodation preferences, booking za transport na invoices. Muonekano wake umetengenezwa kwa Blade na Bootstrap 5; backend ni Laravel/PHP. Local hutumia SQLite; production inaweza kutumia PostgreSQL (Render) au MySQL (Namecheap).
+Project hii ina website, dashboard, booking za tour, accommodation preferences, booking za transport na invoices. Muonekano wake umetengenezwa kwa Blade na Bootstrap 5; backend ni Laravel/PHP. Database iliyosanidiwa ni MySQL 8+ kwa local na Namecheap.
 
 ## 1. Hakikisha una mahitaji haya
 
 - PHP **8.4.1 au toleo jipya la 8.x** lenye extensions zilizo kwenye README. XAMPP yenye PHP 8.2 haitoshi kwa lockfile ya project hii. Unaweza kutumia mazingira yenye PHP 8.4 iliyosasishwa, kwa mfano Laravel Herd.
-- PDO SQLite kwa local; PostgreSQL kwa Render au MySQL 8.0+ kwa Namecheap.
+- MySQL 8.0+ na PHP extension `pdo_mysql`. PHPUnit hutumia SQLite ya muda kwa tests.
 - Composer 2.
 - Node/npm utazihitaji tu ukibadilisha CSS au JavaScript na kutaka kuzijenga upya. Faili zilizojengwa tayari zimo ndani ya ZIP.
 
@@ -17,7 +17,7 @@ Staff huingia kwa email na password kisha hufikishwa moja kwa moja kwenye admin 
 
 Extract ZIP. Fungua folder `sparkling-tours`; ndani yake utaona `artisan`, `composer.json`, `app` na `public`.
 
-Kwa matumizi ya local huna haja ya kusetup database server. Laravel itatumia SQLite. Tengeneza database ya PostgreSQL au MySQL tu kwa production kulingana na hosting utakayochagua.
+Tengeneza MySQL database na user. Kwenye Namecheap cPanel, tumia majina halisi yenye prefix ya akaunti. Weka taarifa hizo kwenye `.env` kabla ya kuendesha migrations.
 
 ## 3. Andaa `.env`
 
@@ -33,12 +33,16 @@ Linux/macOS:
 cp .env.example .env
 ```
 
-Fungua `.env`. Local tumia SQLite:
+Fungua `.env` na weka taarifa za MySQL:
 
 ```dotenv
 APP_ENV=local
-DB_CONNECTION=sqlite
-DB_DATABASE=database/database.sqlite
+DB_CONNECTION=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=cpanel_database_name
+DB_USERNAME=cpanel_database_user
+DB_PASSWORD=your_cpanel_database_password
 SESSION_DRIVER=file
 CACHE_STORE=file
 QUEUE_CONNECTION=sync
@@ -48,9 +52,8 @@ QUEUE_CONNECTION=sync
 
 ### Kuchagua hosting
 
-- **Render:** Dockerfile ya root hutumia FrankenPHP, PostgreSQL na Render `PORT`. Fuata [mwongozo wa hosting](docs/HOSTING.md#render).
-- **Namecheap:** tumia cPanel/SSH au VPS inayotoa PHP 8.4.1+, extensions zinazohitajika, MySQL 8+, na uwezo wa kuelekeza document root kwenye `public`. Fuata [mwongozo wa hosting](docs/HOSTING.md#namecheap).
-- Local `.env` ni tofauti na variables za Render/Namecheap; usibadilishe local SQLite iwe production database ili website ianze.
+- **Namecheap:** tumia cPanel/SSH au VPS inayotoa PHP 8.4.1+, `pdo_mysql`, MySQL 8+, na uwezo wa kuelekeza document root kwenye `public`. Fuata [mwongozo wa hosting](docs/HOSTING.md#namecheap).
+- Credentials halisi za MySQL hutolewa na cPanel. Usipakie `.env` kwenye GitHub au ndani ya public web folder.
 
 ## 4. Weka dependencies, schema na data za website
 

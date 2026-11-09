@@ -1,19 +1,18 @@
 # Hosting and release guide
 
-The website, public routes, admin dashboard, booking workflows, and photos are the same on every host. Choose one production setup:
+The website, public routes, admin dashboard, booking workflows, and photos are unchanged. This guide configures the application for Namecheap with MySQL:
 
 | Host | Runtime | Database | Deployment files |
 |---|---|---|---|
-| Render | Docker / FrankenPHP | PostgreSQL | Root `Dockerfile` and `Caddyfile` |
 | Namecheap | PHP 8.4+ with cPanel/SSH or VPS | MySQL 8+ | Laravel `public` document root; no Docker required |
 
-This Laravel application is not a static Vite site. Do not configure the project as a static-site deployment. The local `.env.example` uses SQLite only for local development; production must use a persistent database.
+This Laravel application is not a static Vite site. Do not configure the project as a static-site deployment. The application is configured to use MySQL. PHPUnit tests use in-memory SQLite and do not change the application's configured database.
 
-The dependency lockfile requires PHP **8.4.1+**. Do not bypass Composer platform checks to run PHP 8.2/8.3. Production also needs BCMath, GD, PDO and the PDO driver for the selected database (`pdo_pgsql` on Render or `pdo_mysql` on Namecheap). Use HTTPS, and configure PHP/web-server uploads for at least 10 MB (`upload_max_filesize=10M`, `post_max_size=14M`).
+The dependency lockfile requires PHP **8.4.1+**. Do not bypass Composer platform checks to run PHP 8.2/8.3. Production also needs BCMath, GD, PDO, and `pdo_mysql`. Use HTTPS, and configure PHP/web-server uploads for at least 10 MB (`upload_max_filesize=10M`, `post_max_size=14M`).
 
 ## Shared production configuration
 
-Set these variables in the host's protected environment-variable settings, not in Git or a publicly served directory:
+Set these variables in the host's protected environment-variable settings, not in Git or a publicly served directory. `APP_URL` must be the public origin only (scheme and hostname, with an optional port), not a URL containing a path:
 
 ```dotenv
 APP_ENV=production
@@ -42,32 +41,6 @@ The application seeder uses create-if-missing behavior to install baseline regio
 
 Create the first administrator securely using `php artisan staff:create your-email@example.com`. The command prompts for a password and does not accept a password as a command argument. No default administrator is installed.
 
-## Render
-
-Create a Render **Web Service** from this repository. Select the `main` branch, Docker runtime, and root `Dockerfile`. The included Docker image installs PHP 8.4, PostgreSQL support, and Vite assets; it runs FrankenPHP without the low-port file capability and listens on Render's `PORT` (default `10000`). The root `Dockerfile` is specific to Render/container hosting; do not use it for Namecheap cPanel.
-
-Create or select a Render PostgreSQL database in the same region and add its **internal** URL as `DATABASE_URL` in the web service environment. Also set:
-
-```dotenv
-DB_CONNECTION=pgsql
-DATABASE_URL=<Render PostgreSQL internal URL>
-SESSION_DRIVER=database
-CACHE_STORE=database
-QUEUE_CONNECTION=database
-```
-
-Remove any SQLite settings from the Render service or linked environment groups, especially `DB_CONNECTION=sqlite` and `DB_DATABASE=sparkling`. SQLite is only for local development; the Render image defaults to PostgreSQL and requires the database's `DATABASE_URL`.
-
-Set the shared production configuration above using the service's actual `onrender.com` or custom hostname. Set the Render **Pre-Deploy Command** to:
-
-```sh
-php artisan migrate --force && php artisan db:seed --force
-```
-
-After pushing changes, use **Manual Deploy → Deploy latest commit**. The build log must not show `setcap CAP_NET_BIND_SERVICE=+eip`; runtime logs must show FrankenPHP starting without `Operation not permitted`. Check `https://your-service.onrender.com/up` and the public pages after deployment. Render's container filesystem is ephemeral: attach a persistent disk at `/app/public/images/uploads` for admin-uploaded photos, and ensure the service user can write there. Bundled photos under `public/images` are part of the image and do not need a disk.
-
-If queued mail is enabled, configure a Render background worker for `php artisan queue:work database --sleep=3 --tries=4 --timeout=60`, and a scheduled task for `php artisan schedule:run`. Do not expect a web service to run permanent workers automatically.
-
 ## Namecheap
 
 Use Namecheap cPanel/SSH or a VPS plan that provides the required PHP **8.4.1+**, extensions including `pdo_mysql`, MySQL 8+, HTTPS, writable storage, and a way to set the site's document root to the project's `public` directory. Confirm those capabilities in the specific plan before purchase; shared hosting plans differ. If the cPanel plan cannot point the domain to `public`, use a supported VPS or ask Namecheap support for a secure Laravel document-root setup. Do not move `.env`, `app`, or `vendor` into a publicly served directory.
@@ -92,7 +65,7 @@ The standard Laravel `public/.htaccess` is included for Apache. Do not replace i
 
 ## Preserve data and verify the site
 
-Admin-uploaded images are stored under `public/images/uploads`. On Render, preserve them on a persistent disk or move them to object storage before relying on them across deploys. On Namecheap, include that directory in backups and do not overwrite/delete it during uploads. The checked-in photographs under `public/images` ship with the application.
+Admin-uploaded images are stored under `public/images/uploads`. Include that directory in backups and do not overwrite/delete it during uploads. The checked-in photographs under `public/images` ship with the application.
 
 After deployment, verify `/up`, `/`, `/about`, `/tours`, destination pages for Zanzibar and Mainland, `/transport`, `/contact`, `/privacy`, `/terms`, `/photo-credits`, and `/login`. Sign in with the administrator account you created, submit a test request, confirm email delivery, and check that all images load. Also complete a real Turnstile test on the production hostname. Deployment configuration cannot validate hosting credentials or external services until tested on the chosen host.
 

@@ -17,6 +17,8 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call(AdminUserSeeder::class);
+
         $z = Region::firstOrCreate(['slug' => 'zanzibar'], ['name' => 'Zanzibar', 'description' => 'The islands and Swahili coast.']);
         $m = Region::firstOrCreate(['slug' => 'mainland'], ['name' => 'Mainland', 'description' => 'Tanzania Mainland wildlife, landscapes and culture.']);
         $photos = [['zanzibar-dhow.jpg', 'A dhow on the Zanzibar coast', $z->id], ['zanzibar-beach.jpg', 'Zanzibar coastline', $z->id], ['stone-town.jpg', 'Stone Town architecture', $z->id], ['serengeti-safari-vehicle.jpg', 'Safari in the Serengeti (illustrative vehicle)', $m->id], ['kilimanjaro-moshi.jpg', 'Kilimanjaro viewed from Moshi', $m->id], ['serengeti-lion.jpg', 'A lion in the Serengeti', $m->id], ['tanzania-safari-sunset.jpg', 'Tanzanian safari landscape', $m->id]];

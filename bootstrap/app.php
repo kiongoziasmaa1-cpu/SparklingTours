@@ -21,8 +21,17 @@ $app = Application::configure(basePath: dirname(__DIR__))
     })
     ->create();
 
+
 $app->afterBootstrapping(LoadConfiguration::class, function (Application $app): void {
     if ($app->environment('production')) {
+
+        // Use Namecheap public_html as Laravel's public directory.
+        $publicPath = dirname($app->basePath()).'/public_html';
+
+        if (is_dir($publicPath)) {
+            $app->usePublicPath($publicPath);
+        }
+
         TrustProxies::at('*');
         TrustProxies::withHeaders(
             Request::HEADER_X_FORWARDED_FOR |
@@ -32,5 +41,6 @@ $app->afterBootstrapping(LoadConfiguration::class, function (Application $app): 
         );
     }
 });
+
 
 return $app;

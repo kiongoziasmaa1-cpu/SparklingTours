@@ -123,12 +123,14 @@ class TourismTest extends TestCase
 
     public function test_public_pages_render_and_navigation_has_independent_transport_without_hotel_menu(): void
     {
-        foreach (['/', '/tours', '/explore/zanzibar/destinations', '/explore/mainland/tours', '/explore/zanzibar/activities', '/explore/zanzibar/food', '/explore/zanzibar/travel-guide', '/transport', '/about', '/contact', '/privacy', '/terms', '/photo-credits', '/plan-your-trip', '/transport/airport-stone-town', '/experience/stone-town-and-coast', '/sitemap.xml'] as $path) {
+        foreach (['/', '/tours', '/explore/zanzibar/destinations', '/explore/mainland/tours', '/explore/zanzibar/activities', '/explore/zanzibar/food', '/explore/zanzibar/travel-guide', '/transport', '/gallery', '/about', '/contact', '/privacy', '/terms', '/photo-credits', '/plan-your-trip', '/transport/airport-stone-town', '/experience/stone-town-and-coast', '/sitemap.xml'] as $path) {
             $this->get($path)->assertOk();
         }
         $html = $this->get('/')->getContent();
         $this->assertStringContainsString('/transport', $html);
         $this->assertStringNotContainsString('href="/accommodation', $html);
+        $this->assertStringNotContainsString('/language/', $html);
+        $this->assertStringNotContainsString('href="'.route('catalog.index', ['zanzibar', 'travel-guide']).'"', $html);
         $this->get('/about')
             ->assertOk()
             ->assertSee('about-page-photo', false)
@@ -320,23 +322,45 @@ class TourismTest extends TestCase
         $this->assertSame(1, substr_count($html, 'class="hero-image is-active" data-hero-slide'));
     }
 
-    public function test_homepage_gallery_is_a_single_image_only_row_with_scroll_controls(): void
+    public function test_homepage_has_no_preferred_places_section_and_gallery_is_a_separate_zanzibar_page(): void
     {
-        $html = $this->get('/')->assertOk()
-            ->assertSee('class="section-pad photo-carousel"', false)
-            ->assertSee('data-gallery-prev', false)
-            ->assertSee('data-gallery-next', false)
-            ->assertSee('data-gallery-track', false)
+        $this->get('/')
+            ->assertOk()
+            ->assertDontSee('Most preferable places')
+            ->assertSee('href="'.route('gallery').'"', false);
+
+        $gallery = $this->get(route('gallery'))
+            ->assertOk()
+            ->assertSee('<h1 class="gallery-heading">Gallery</h1>', false)
+            ->assertDontSee('gallery-photo-count', false)
+            ->assertDontSee('gallery-photo-caption', false)
             ->getContent();
 
-        preg_match('/<section class="section-pad photo-carousel".*?<\\/section>/s', $html, $matches);
-        $this->assertNotEmpty($matches);
-        $gallery = $matches[0];
-        $this->assertSame(7, substr_count($gallery, 'class="destination-gallery-card"'));
-        $this->assertStringNotContainsString('>Tanzania<', $gallery);
-        $this->assertStringNotContainsString('>Zanzibar<', $gallery);
-        $this->assertStringNotContainsString('class="caption"', $gallery);
-        $this->assertSame(7, substr_count($gallery, '<img'));
+        $this->assertSame(3, substr_count($gallery, 'class="gallery-photo-card"'));
+        $this->assertStringNotContainsString('serengeti-safari-vehicle.jpg', $gallery);
+    }
+
+    public function test_admin_can_assign_zanzibar_gallery_photos_to_a_place(): void
+    {
+        $photo = MediaAsset::where('path', 'images/zanzibar-beach.jpg')->firstOrFail();
+        $zanzibar = Region::where('slug', 'zanzibar')->firstOrFail();
+        $photo->update(['region_id' => null]);
+
+        $this->actingAs($this->admin())
+            ->patch(route('admin.media.update', $photo), [
+                'alt' => $photo->alt,
+                'region_id' => $zanzibar->id,
+                'location' => 'Paje',
+                'gallery' => 1,
+                'sort_order' => $photo->sort_order,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame($zanzibar->id, $photo->fresh()->region_id);
+        $this->get(route('gallery'))
+            ->assertOk()
+            ->assertSee($photo->fresh()->url());
     }
 
     public function test_trip_experiences_are_name_only_selectable_dropdown_groups(): void

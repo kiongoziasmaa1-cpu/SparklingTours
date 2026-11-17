@@ -127,10 +127,14 @@ class OperationsController extends Controller
     {
         $this->admin();
         $d = $r->validate(
-            ['image' => 'required|file|image|mimes:jpg,jpeg,png,webp|max:10240|dimensions:max_width=6000,max_height=6000', 'alt' => 'required|string|max:190', 'region_id' => 'nullable|exists:regions,id', 'gallery' => 'boolean', 'sort_order' => 'required|integer|min:0|max:10000'],
+            ['image' => 'required|file|image|mimes:jpg,jpeg,png,webp|max:10240|dimensions:max_width=6000,max_height=6000', 'alt' => 'required|string|max:190', 'region_id' => 'nullable|exists:regions,id', 'location' => 'nullable|string|max:120', 'gallery' => 'boolean', 'sort_order' => 'required|integer|min:0|max:10000'],
             ['image.uploaded' => 'The image did not reach the server. Choose an image under 10 MB and make sure PHP upload_max_filesize is at least 10M and post_max_size is at least 14M.']
         );
-        $asset = MediaAsset::create(['path' => app(MediaLibrary::class)->store($r->file('image')), 'alt' => $d['alt'], 'region_id' => $d['region_id'] ?? null, 'gallery' => $r->boolean('gallery'), 'sort_order' => $d['sort_order']]);
+        $regionId = $d['region_id'] ?? null;
+        if ($r->boolean('gallery') && ! $regionId) {
+            $regionId = Region::where('slug', 'zanzibar')->firstOrFail()->id;
+        }
+        $asset = MediaAsset::create(['path' => app(MediaLibrary::class)->store($r->file('image')), 'alt' => $d['alt'], 'region_id' => $regionId, 'location' => $d['location'] ?? null, 'gallery' => $r->boolean('gallery'), 'sort_order' => $d['sort_order']]);
         Audit::record('media.uploaded', $asset);
 
         return back()->with('status', 'Photograph uploaded.');
@@ -140,7 +144,7 @@ class OperationsController extends Controller
     {
         $this->admin();
         $d = $r->validate(
-            ['image' => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:10240|dimensions:max_width=6000,max_height=6000', 'alt' => 'required|string|max:190', 'gallery' => 'required|boolean', 'sort_order' => 'required|integer|min:0|max:10000'],
+            ['image' => 'nullable|file|image|mimes:jpg,jpeg,png,webp|max:10240|dimensions:max_width=6000,max_height=6000', 'alt' => 'required|string|max:190', 'region_id' => 'nullable|exists:regions,id', 'location' => 'nullable|string|max:120', 'gallery' => 'required|boolean', 'sort_order' => 'required|integer|min:0|max:10000'],
             ['image.uploaded' => 'The image did not reach the server. Choose an image under 10 MB and make sure PHP upload_max_filesize is at least 10M and post_max_size is at least 14M.']
         );
         $oldPath = null;

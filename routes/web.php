@@ -15,6 +15,7 @@ Route::get('/book-tour/{slug}', [BookingController::class, 'tourContactForm'])->
 Route::get('/transport', [PublicController::class, 'transport'])->name('transport.index');
 Route::get('/transport/{slug}', [BookingController::class, 'transportForm'])->name('transport.book');
 Route::get('/plan-your-trip', [BookingController::class, 'tourForm'])->name('tour.book');
+Route::get('/gallery', [PublicController::class, 'gallery'])->name('gallery');
 Route::get('/contact', [PublicController::class, 'contact'])->name('contact');
 Route::post('/contact', [PublicController::class, 'sendContact'])->middleware('throttle:public-forms');
 Route::get('/photo-credits', [PublicController::class, 'credits'])->name('credits');

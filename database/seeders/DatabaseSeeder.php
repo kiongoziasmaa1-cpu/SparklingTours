@@ -21,10 +21,22 @@ class DatabaseSeeder extends Seeder
 
         $z = Region::firstOrCreate(['slug' => 'zanzibar'], ['name' => 'Zanzibar', 'description' => 'The islands and Swahili coast.']);
         $m = Region::firstOrCreate(['slug' => 'mainland'], ['name' => 'Mainland', 'description' => 'Tanzania Mainland wildlife, landscapes and culture.']);
-        $photos = [['zanzibar-dhow.jpg', 'A dhow on the Zanzibar coast', $z->id], ['zanzibar-beach.jpg', 'Zanzibar coastline', $z->id], ['stone-town.jpg', 'Stone Town architecture', $z->id], ['serengeti-safari-vehicle.jpg', 'Safari in the Serengeti (illustrative vehicle)', $m->id], ['kilimanjaro-moshi.jpg', 'Kilimanjaro viewed from Moshi', $m->id], ['serengeti-lion.jpg', 'A lion in the Serengeti', $m->id], ['tanzania-safari-sunset.jpg', 'Tanzanian safari landscape', $m->id]];
+        $photos = [
+            ['zanzibar-dhow.jpg', 'A dhow on the Zanzibar coast', $z->id, 'Zanzibar Coast'],
+            ['zanzibar-beach.jpg', 'Zanzibar coastline', $z->id, 'Zanzibar Coast'],
+            ['stone-town.jpg', 'Stone Town architecture', $z->id, 'Stone Town'],
+            ['serengeti-safari-vehicle.jpg', 'Safari in the Serengeti (illustrative vehicle)', $m->id, null],
+            ['kilimanjaro-moshi.jpg', 'Kilimanjaro viewed from Moshi', $m->id, null],
+            ['serengeti-lion.jpg', 'A lion in the Serengeti', $m->id, null],
+            ['tanzania-safari-sunset.jpg', 'Tanzanian safari landscape', $m->id, null],
+        ];
         $media = [];
-        foreach ($photos as $i => [$file,$alt,$region]) {
-            $media[$file] = MediaAsset::firstOrCreate(['path' => 'images/'.$file], ['alt' => $alt, 'region_id' => $region, 'gallery' => true, 'sort_order' => $i])->id;
+        foreach ($photos as $i => [$file, $alt, $region, $location]) {
+            $asset = MediaAsset::firstOrCreate(['path' => 'images/'.$file], ['alt' => $alt, 'region_id' => $region, 'location' => $location, 'gallery' => true, 'sort_order' => $i]);
+            if ($location && (int) $asset->region_id === (int) $z->id && ! $asset->location) {
+                $asset->update(['location' => $location]);
+            }
+            $media[$file] = $asset->id;
         }
         $make = function ($slug, $kind, $name, $region, $price, $photo, $extra = []) use ($media) {
             return CatalogItem::firstOrCreate(['slug' => $slug], array_merge(['kind' => $kind, 'name' => $name, 'region_id' => $region, 'summary' => 'An illustrative experience to help you explore your travel options.', 'description' => 'Take time to discover the places, people and landscapes that make this part of Tanzania memorable. Our team can discuss the details and arrangements with you. This is sample content; availability and final services are reviewed after a request.', 'price' => $price, 'currency' => 'TZS', 'pricing_basis' => 'per_person', 'published' => true, 'duration_days' => 1, 'media_asset_id' => $media[$photo]], $extra));

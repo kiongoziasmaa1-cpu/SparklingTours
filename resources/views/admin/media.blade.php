@@ -7,12 +7,13 @@
     <form method="post" enctype="multipart/form-data" action="{{route('admin.media')}}">
         @csrf
         <div class="row">
-            <div class="col-md-4"><x-input name="image" label="Photograph" type="file" :required="true" accept="image/jpeg,image/png,image/webp"/></div>
-            <div class="col-md-4"><x-input name="alt" label="Caption / accessible description" :required="true"/></div>
-            <div class="col-md-2"><label class="form-label">Region</label><select class="form-select" name="region_id"><option value="">General</option>@foreach($regions as $region)<option value="{{$region->id}}">{{$region->name}}</option>@endforeach</select></div>
+            <div class="col-md-3"><x-input name="image" label="Photograph" type="file" :required="true" accept="image/jpeg,image/png,image/webp"/></div>
+            <div class="col-md-3"><x-input name="alt" label="Caption / accessible description" :required="true"/></div>
+            <div class="col-md-2"><label class="form-label" for="media-region">Region</label><select class="form-select" id="media-region" name="region_id"><option value="">General</option>@foreach($regions as $region)<option value="{{$region->id}}">{{$region->name}}</option>@endforeach</select></div>
+            <div class="col-md-2"><x-input name="location" label="Place / area" maxlength="120" hint="For example, Stone Town or Paje."/></div>
             <div class="col-md-2"><x-input name="sort_order" label="Display order" type="number" value="0" min="0" :required="true"/></div>
         </div>
-        <label class="form-check mb-3"><input class="form-check-input" type="checkbox" name="gallery" value="1"><span class="form-check-label">Show in region gallery</span></label>
+        <label class="form-check mb-3"><input class="form-check-input" type="checkbox" name="gallery" value="1"><span class="form-check-label">Add to gallery (select Zanzibar region for the public Zanzibar gallery)</span></label>
         <button class="btn btn-primary" type="submit">Upload photograph</button>
     </form>
 </div>
@@ -59,6 +60,14 @@
                         <label class="form-label">Replace image (optional)</label>
                         <input class="form-control mb-3" type="file" name="image" accept="image/jpeg,image/png,image/webp">
                         <x-input name="alt" label="Caption" :value="$photo->alt" :required="true"/>
+                        <label class="form-label" for="media-region-{{$photo->id}}">Region</label>
+                        <select class="form-select mb-3" id="media-region-{{$photo->id}}" name="region_id">
+                            <option value="">General</option>
+                            @foreach($regions as $region)
+                                <option value="{{$region->id}}" @selected((string)$photo->region_id===(string)$region->id)>{{$region->name}}</option>
+                            @endforeach
+                        </select>
+                        <x-input name="location" label="Place / area" :value="$photo->location" maxlength="120" hint="For example, Stone Town or Paje."/>
                         <x-input name="sort_order" label="Order" type="number" :value="$photo->sort_order" :required="true" min="0"/>
                         <input type="hidden" name="gallery" value="0">
                         <label class="form-check mb-3"><input type="checkbox" name="gallery" value="1" class="form-check-input" @checked($photo->gallery)><span class="form-check-label">In gallery</span></label>

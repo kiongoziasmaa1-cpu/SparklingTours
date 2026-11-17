@@ -61,8 +61,8 @@
     </a>
 </li>@foreach($navigationRegions as $navRegion)
 <li class="nav-item dropdown">
-    <button class="nav-link dropdown-toggle border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false">{{$navRegion->name}}</button><ul class="dropdown-menu">@foreach(['destinations','tours','activities','food','travel-guide'] as $category)<li><a class="dropdown-item" href="{{route('catalog.index',[$navRegion->slug,$category])}}">{{__('ui.'.$category)}}</a>
-</li>@endforeach</ul></li>@endforeach<li class="nav-item"><a class="nav-link" href="{{route('transport.index')}}">{{__('ui.transport')}}</a></li><li class="nav-item"><a class="nav-link" href="{{route('contact')}}">{{__('ui.contact')}}</a></li><li class="nav-item ms-lg-2"><form method="post" action="{{route('language',app()->getLocale()==='en'?'sw':'en')}}">@csrf<button class="btn btn-sm btn-outline-primary" type="submit">{{app()->getLocale()==='en'?'SW':'EN'}}</button></form></li></ul></div></div></nav>
+    <button class="nav-link dropdown-toggle border-0 bg-transparent" type="button" data-bs-toggle="dropdown" aria-expanded="false">{{$navRegion->name}}</button><ul class="dropdown-menu">@foreach(['destinations','tours','activities','food'] as $category)<li><a class="dropdown-item" href="{{route('catalog.index',[$navRegion->slug,$category])}}">{{__('ui.'.$category)}}</a>
+</li>@endforeach</ul></li>@endforeach<li class="nav-item"><a class="nav-link" href="{{route('transport.index')}}">{{__('ui.transport')}}</a></li><li class="nav-item"><a class="nav-link" href="{{route('gallery')}}">Gallery</a></li><li class="nav-item"><a class="nav-link" href="{{route('contact')}}">{{__('ui.contact')}}</a></li></ul></div></div></nav>
 <main id="main">@include('components.messages')@yield('content')
 
 </main>

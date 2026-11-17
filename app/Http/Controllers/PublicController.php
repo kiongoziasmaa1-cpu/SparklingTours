@@ -28,9 +28,20 @@ class PublicController extends Controller
             ->get();
 
         return view('public.home', [
-            'galleries' => MediaAsset::where('gallery', true)->orderBy('sort_order')->get(),
             'destinationRegions' => $destinationRegions,
         ]);
+    }
+
+    public function gallery()
+    {
+        $galleries = MediaAsset::where('gallery', true)
+            ->whereHas('region', fn ($query) => $query->where('slug', 'zanzibar'))
+            ->orderBy('location')
+            ->orderBy('sort_order')
+            ->get()
+            ->groupBy(fn (MediaAsset $photo) => $photo->location ?: 'Zanzibar');
+
+        return view('public.gallery', ['galleries' => $galleries]);
     }
 
     public function catalog(Request $r, ?string $region = null, ?string $category = null)
